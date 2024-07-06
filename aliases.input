@@ -1,0 +1,15 @@
+alias lnx001ans='ssh -i /Users/aryan/.ssh/id_rsa ansible@164.90.178.212'
+alias lnx001awx='ssh -i /Users/aryan/.ssh/id_rsa awxuser@164.90.178.212'
+alias lnx001root='ssh -i /Users/aryan/.ssh/id_rsa root@164.90.178.212'
+
+alias lnx002ans='ssh -i /Users/aryan/.ssh/id_rsa ansible@164.90.209.9'
+alias lnx002awx='ssh -i /Users/aryan/.ssh/id_rsa awxuser@164.90.209.9'
+alias lnx002root='ssh -i /Users/aryan/.ssh/id_rsa root@164.90.209.9'
+
+alias lnx003ans='ssh -i /Users/aryan/.ssh/id_rsa ansible@167.172.174.247'
+alias lnx003awx='ssh -i /Users/aryan/.ssh/id_rsa awxuser@167.172.174.247'
+alias lnx003root='ssh -i /Users/aryan/.ssh/id_rsa root@167.172.174.247'
+
+alias lnx004ans='ssh -i /Users/aryan/.ssh/id_rsa ansible@167.172.161.175'
+alias lnx003awx='ssh -i /Users/aryan/.ssh/id_rsa awxuser@167.172.161.175'
+alias lnx003root='ssh -i /Users/aryan/.ssh/id_rsa root@167.172.161.175''
