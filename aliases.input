@@ -1,4 +1,4 @@
-alias lnx001ans='ssh -i /Users/aryan/.ssh/id_rsa ansible@164.90.178.212'
+alias lnx001ans='ssh -i ~/.ssh/id_rsa ansible@164.90.178.212'
 alias lnx001awx='ssh -i /Users/aryan/.ssh/id_rsa awxuser@164.90.178.212'
 alias lnx001root='ssh -i /Users/aryan/.ssh/id_rsa root@164.90.178.212'
 
