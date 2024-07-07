@@ -2,7 +2,14 @@
 
 ## 1. Commission 4 VM's over your favorite platform
 The instructions here are primarily for the Ubuntu OS.
+Commision 4 VM's over at your cloud provider, call them:
 
+lnx001
+lnx002
+lnx003
+lnx004
+
+and take note of the IP's
 ## 2. Edit aliases and add them to your .bashrc
 
 `vi aliases.input`
