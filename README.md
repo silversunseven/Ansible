@@ -2,7 +2,7 @@
 
 ## 1. Commission 4 VM's over your favorite platform
 The instructions here are primarily for the Ubuntu OS.
-Commision 4 VM's over at your cloud provider, call them:
+Commision 4 VM's over at your cloud provider. Be sure to add your public key to all the servers and call them:
 
 lnx001
 lnx002
