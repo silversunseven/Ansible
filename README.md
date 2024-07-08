@@ -1,8 +1,9 @@
 # Ansible
 
-## 1. Commission 4 VM's over your favorite platform
+## 1. Commission 4 VM's 
 The instructions here are primarily for the Ubuntu OS.
-Commision 4 VM's over at your cloud provider. Be sure to add your public key to all the servers and call them:
+Commision 4 VM's over at your cloud provider. I used https://cloud.digitalocean.com.
+Be sure to add your public key to all the servers and call them:
 
 lnx001
 lnx002
@@ -31,7 +32,7 @@ do
   ssh -i ~/.ssh/id_rsa root@${ip} mkdir -p /home/awxuser/.ssh/
   scp -i ~/.ssh/id_rsa id_rsa.pub root@${ip}:/home/awxuser/.ssh/authorized_keys
   ssh -i ~/.ssh/id_rsa root@${ip} chown -R awxuser:awxuser /home/awxuser/.ssh
-  ssh -i ~/.ssh/id_rsa root@${ip} echo "awxuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+  ssh -i ~/.ssh/id_rsa root@${ip} "echo 'awxuser ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers"
 
 
   ssh -i ~/.ssh/id_rsa root@${ip} useradd -m -s /bin/bash ansible
@@ -39,7 +40,7 @@ do
   ssh -i ~/.ssh/id_rsa root@${ip} mkdir -p /home/ansible/.ssh/
   scp -i ~/.ssh/id_rsa id_rsa.pub root@${ip}:/home/ansible/.ssh/authorized_keys
   ssh -i ~/.ssh/id_rsa root@${ip} chown -R ansible:ansible /home/ansible/.ssh
-  ssh -i ~/.ssh/id_rsa root@${ip} echo "ansible ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+  ssh -i ~/.ssh/id_rsa root@${ip} "echo 'ansible ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers"
 done
 ```
 
@@ -69,11 +70,28 @@ sudo apt install -y ansible
 ansible --version
 
 # Install Node.js (needed for the AWX frontend)
-apt install -y nodejs npm
+sudo apt install -y nodejs npm
 
 # Install AWX Repo
 git clone https://github.com/ansible/awx.git
-cd awx/installer
+cd tools/docker-compose
+make docker-compose-build
 
+# Deploy AWX using Docker Compose
+mkdir -p /data/awx/projects
+sudo chown 1000:1000 /data/awx/projects
 
+docker-compose up -d
+docker-compose ps
+````
 
+## Login
+http://164.90.178.212
+
+The default credentials for AWX are:
+
+Username: admin
+
+Password: password
+
+`docker logs <container_id>`
