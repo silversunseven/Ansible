@@ -17,10 +17,6 @@ lnx004
 
 ->add new ip's
 
-`vi id_rsa.pub`
- 
-->add public Key
-
 `cat aliases.input >>  ~/.zshrc`
 
  `source ~/.zshrc`
