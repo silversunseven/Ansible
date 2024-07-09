@@ -1,7 +1,8 @@
 # Ansible
 
 ## 1. Commission 4 VM's 
-The instructions here are primarily for the Ubuntu OS.
+The instructions here are primarily for using you mac as a control host and the
+managed servers as Ubuntu hosts.
 Commision 4 VM's over at your cloud provider. I used https://cloud.digitalocean.com.
 Be sure to add your public key to all the servers and call them:
 
@@ -10,37 +11,58 @@ lnx002
 lnx003
 lnx004
 
-and take note of the IP's
-## 2. Edit aliases and add them to your .bashrc
+## 2. Edit hosts with new IP's
 
-`vi aliases.input`
- 
-->update with server IP's
+`vi hosts`
+
+->add new ip's
 
 `vi id_rsa.pub`
  
 ->add public Key
 
-`cat aliases.input >>  ~/.bashrc`
+`cat aliases.input >>  ~/.zshrc`
 
-## 3. Setup Users and keys on hosts
+ `source ~/.zshrc`
+
+
+## 3. Setup Control host
+
+`sudo sh -c 'cat hosts >> /etc/hosts'`
+
+## 4. Setup Users and keys on managed hosts
 ``` 
-for ip in `cat aliases.input | awk -F'@' '{ print $2}' |sed 's/.$//g' |sort |uniq`
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible_key -N ""
+SSH_KEY_CONTENT="$(cat ~/.ssh/ansible_key.pub)"
+
+for host in `cat hosts| awk -F' ' '{ print $1}' |sort |uniq`
 do   
-  ssh -i ~/.ssh/id_rsa root@${ip} useradd -m -s /bin/bash awxuser
-  ssh -i ~/.ssh/id_rsa root@${ip} sudo usermod -aG sudo awxuser
-  ssh -i ~/.ssh/id_rsa root@${ip} mkdir -p /home/awxuser/.ssh/
-  scp -i ~/.ssh/id_rsa id_rsa.pub root@${ip}:/home/awxuser/.ssh/authorized_keys
-  ssh -i ~/.ssh/id_rsa root@${ip} chown -R awxuser:awxuser /home/awxuser/.ssh
-  ssh -i ~/.ssh/id_rsa root@${ip} "echo 'awxuser ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers"
+  # Create the user awxuser
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "useradd -m -s /bin/bash awxuser"
+  # Create the .ssh directory for awxuser
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "mkdir -p /home/awxuser/.ssh/"
+  # Copy the public key to the remote host for root
+  scp -i ~/.ssh/id_rsa ~/.ssh/ansible_key.pub root@${host}:/home/awxuser/.ssh/authorized_keys
+  # Change ownership of the .ssh directory
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "chown -R awxuser:awxuser /home/awxuser/.ssh"
+  # Add awxuser to the sudoers file
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "echo 'awxuser ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers"
+  # Append the SSH public key to authorized_keys of awxuser
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "echo \"$SSH_KEY_CONTENT\" >> /home/awxuser/.ssh/authorized_keys"
 
+  # Create the user ansible
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "useradd -m -s /bin/bash ansible"
+  # Create the .ssh directory for ansible
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "mkdir -p /home/ansible/.ssh/"
+  # Copy the public key to the remote host for root
+  scp -i ~/.ssh/id_rsa ~/.ssh/ansible_key.pub root@${host}:/home/ansible/.ssh/authorized_keys
+  # Change ownership of the .ssh directory
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "chown -R ansible:ansible /home/ansible/.ssh"
+  # Add ansible to the sudoers file
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "echo 'ansible ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers"
+  # Append the SSH public key to authorized_keys of ansible
+  ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${host} "echo \"$SSH_KEY_CONTENT\" >> /home/ansible/.ssh/authorized_keys"
 
-  ssh -i ~/.ssh/id_rsa root@${ip} useradd -m -s /bin/bash ansible
-  ssh -i ~/.ssh/id_rsa root@${ip} sudo usermod -aG sudo ansible
-  ssh -i ~/.ssh/id_rsa root@${ip} mkdir -p /home/ansible/.ssh/
-  scp -i ~/.ssh/id_rsa id_rsa.pub root@${ip}:/home/ansible/.ssh/authorized_keys
-  ssh -i ~/.ssh/id_rsa root@${ip} chown -R ansible:ansible /home/ansible/.ssh
-  ssh -i ~/.ssh/id_rsa root@${ip} "echo 'ansible ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers"
 done
 ```
 
