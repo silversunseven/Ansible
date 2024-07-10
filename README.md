@@ -11,25 +11,39 @@ lnx002
 lnx003
 lnx004
 
-## 2. Edit hosts with new IP's
+## 2. Local host setup
 
 `vi hosts`
 
 ->add new ip's
 
-`cat aliases.input >>  ~/.zshrc`
+`sudo sh -c 'cat hosts >> /etc/hosts'`
 
- `source ~/.zshrc`
+`sudo sysadminctl -addUser ansible -fullName "Ansible User" -password #######`  <- add the pwd you want to use
+
+`sudo cp -R ~/.ssh/id_rsa /Users/ansible/.ssh/id_rsa`
+
+`cp aliases.input /var/tmp/`
+
+## 2. Setup Ansible user
+
+`sudo su - ansible`
+
+`git clone 
+
+`cat /var/tmp/aliases.input >>  ~/.zshrc`
+
+`source ~/.zshrc`
 
 
 ## 3. Setup Control host
 
-`sudo sh -c 'cat hosts >> /etc/hosts'`
+
 
 ## 4. Setup Users and keys on managed hosts
 ``` 
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/ansible_key -N ""
-SSH_KEY_CONTENT="$(cat ~/.ssh/ansible_key.pub)"
+SSH_KEY_CONTENT="$(cat ~ansible/.ssh/ansible_key.pub)"
 
 for host in `cat hosts| awk -F' ' '{ print $1}' |sort |uniq`
 do   
@@ -113,3 +127,6 @@ Username: admin
 Password: password
 
 `docker logs <container_id>`
+
+
+___
