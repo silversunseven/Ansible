@@ -7,6 +7,7 @@
 - [Inventories](#inventories)
 - [Modules](#modules)
 - [Ansible Documentation](#ansible-documentation)
+- [Playbooks](#playbooks)
 
 ## Distribute Key to managed hosts
 ```
@@ -441,6 +442,55 @@ OPTIONS (= is mandatory):
 ...
 ```
 
+## Playbooks
 
+### YAML
+Important notes to remember!
 
+* Single quote are litteral quotes, whereas double quotes are interpreted.
+* Multilines and single lines:
+* * This is interpreted as a single line because of the `|` 
+```
+---
+exmaple_key_1: |
+  this is a string
+  that goes over
+  multiple lines
+...
+```
+in python this is:
+```
+{'exmaple_key_1': 'this is a string\nthat goes over\nmultiple lines\n'}
+```
+___
+* * This is interpreted as a single line in python and ansible because of the `>` 
 
+```
+---
+exmaple_key_1: >
+  this is a string
+  that goes over
+  multiple lines
+...
+```
+in python this is:
+```
+{'exmaple_key_1': 'this is a string that goes over multiple lines\n'}
+
+```
+___
+note: the `>` added the `\n`at the end. Yaml provides a way to mitigate this with `>-`
+example:
+```
+---
+exmaple_key_1: >-
+  this is a string
+  that goes over
+  multiple lines
+...
+````
+in python this is:
+```
+{'exmaple_key_1': 'this is a string that goes over multiple lines'}
+```
+___
