@@ -634,22 +634,77 @@ ___
 ## Playbooks
 ### Structure
 ```
----
-# The 'minus' below  indicates a list item. The playbook contains a list of plays, with each play being a dictionary.
+# YAML documents begin with the document separator ---
 
+# The minus in YAML this indicates a list item.  The playbook contains a list 
+# of plays, with each play being a dictionary
 -
- # Hosts: targets
 
- # Vars: Variables that will apply to the playbook on all target systems
+  # Hosts: where our play will run and options it will run with
 
- # Tasks: list of tasks to execute. Also used for pre/post tasks.
+  # Vars: variables that will apply to the play, on all target systems
 
- # Handlers: list of handlers that are executed to notify 
+  # Tasks: the list of tasks that will be executed within the play, this section
+  #       can also be used for pre and post tasks
 
- # Roles: List of roles to be imported into play
+  # Handlers: the list of handlers that are executed as a notify key from a task
 
+  # Roles: list of roles to be imported into the play
+
+# Three dots indicate the end of a YAML document
 ...
 ```
 
--
+### Some important notes:
 
+-> `gather_facts: False` will not run the setup module.
+
+-> `"{{ var_name }}"` is a Jinja2 variable used by the jinja2 templating system.
+
+-> Handlers use the notify key inside a task. the execute once after there has been a change. `notify:`and `when:` will call the `handler`matching the `notify` name. 
+
+-> aHere we gather facts so we can get the `ansible_distribution` variable.
+ß
+```
+---
+# YAML documents begin with the document separator ---
+ 
+# The minus in YAML this indicates a list item.  The playbook contains a list
+
+# of plays, with each play being a dictionary
+ 
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+ 
+  # Vars: variables that will apply to the play, on all target systems
+  vars:
+    motd_centos: "Welcome to CentOS Linux - Ansible Rocks\n"
+    motd_ubuntu: "Welcome to Ubuntu Linux - Ansible Rocks\n"
+ 
+  # Tasks: the list of tasks that will be executed within the playbook
+  tasks:
+    - name: Configure a MOTD (message of the day)
+      copy:
+        content: "{{ motd_centos }}"
+        dest: /etc/motd
+      notify: MOTD changed
+      when: ansible_distribution == "CentOS"
+
+    - name: Configure a MOTD (message of the day)
+      copy:
+        content: "{{ motd_ubuntu }}"
+        dest: /etc/motd
+      notify: MOTD changed
+      when: ansible_distribution == "Ubuntu"
+ 
+  # Handlers: the list of handlers that are executed as a notify key from a task
+  handlers:
+    - name: MOTD changed
+      debug:
+        msg: The MOTD was changed
+ 
+  # Roles: list of roles to be imported into the play
+ 
+# Three dots indicate the end of a YAML document
+...
+```
