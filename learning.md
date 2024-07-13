@@ -7,6 +7,7 @@
 - [Inventories](#inventories)
 - [Modules](#modules)
 - [Ansible Documentation](#ansible-documentation)
+- [YAML](#yaml)
 - [Playbooks](#playbooks)
 
 ## Distribute Key to managed hosts
@@ -442,13 +443,11 @@ OPTIONS (= is mandatory):
 ...
 ```
 
-## Playbooks
-
-### YAML
+## YAML
 Important notes to remember!
 
-* Single quote are litteral quotes, whereas double quotes are interpreted.
-* Multilines and single lines:
+### <u>!- Single quote are litteral quotes, whereas double quotes are interpreted.</u>
+### <u>!- Multilines and single lines:</u>
 * * This is interpreted as a single line because of the `|` 
 ```
 ---
@@ -494,3 +493,163 @@ in python this is:
 {'exmaple_key_1': 'this is a string that goes over multiple lines'}
 ```
 ___
+### <u>!- Integers are automatically intepreted as INT unless quoted.</u>
+* Any of these can represent Boolean true or false in Ansible:  
+
+| Boolean | result | comment |
+|---------|--------|---------|
+|false|false||
+|False|false||
+|FALSE|false||
+|no|false||
+|No|false||
+|NO|false||
+|off|false||
+|Off|false||
+|OFF|false||
+|n|false|in ansible this works, but python it doesn't|
+|||
+|||
+|true|true||
+|True|true||
+|TRUE|true||
+|yes|true||
+|Yes|true||
+|YES|true||
+|onf|true||
+|On|true||
+|ON|true||
+|y|true|in ansible this works, but python it doesn't|
+
+It is recommended to use `False` or `True`
+___
+### <u>!- Lists `[]` are assigned with `-`</u> an these actually create a python list.
+```
+---
+- item 1
+- item 2
+- item 3
+- item 4
+- item 5
+...
+```
+
+You can also show a list like this in tha YML file:
+
+`[example_list_entry_1, example_list_entry_2]`
+
+### <u>!- Dictionaries `{}` are assigned with  key `:` value  </u> an these actually create a python dictionary.
+___
+```
+---
+example_key_1 : example_value_1
+example_key_2 : example_value_2
+...
+```
+
+You can also show a dictionary like this in tha YML file:
+
+`{'example_key_1': 'example_value_1', 'example_key_2': 'example_value_2'}`
+___
+
+### <u>!- Indentation </u>
+YML uses a 2 Character indentation.
+
+In this example have a dictionary and each key has a `dictionary` as a value:
+
+```
+---
+example_key_1:
+  sub_example_key1: sub_example:value1
+
+example_key_2:
+  sub_example_key2: sub_example:value2
+...
+````
+
+in Python:
+
+```
+{'example_key_1': {'sub_example_key1': 'sub_example_value1'},
+ 'example_key_2': {'sub_example_key2': 'sub_example_value2'}}
+ ```
+___
+
+In this example have a dcitionary and each key has a `list` as a value:
+```
+---
+example_1: 
+  - item_1
+  - item_2
+  - item_3
+
+example_2: 
+  - item_4
+  - item_5
+  - item_6
+...
+```
+
+in Python:
+
+```
+{'example_1': ['item_1', 'item_2', 'item_3'],
+ 'example_2': ['item_4', 'item_5', 'item_6']}
+```
+___
+
+In this example have a dcitionary and each key has a dictionary as a value which contains a list.
+```
+---
+example_dictionary_1:
+  - example_dictionary_2:
+    - 1
+    - 2
+    - 3
+  - example_dictionary_3:
+    - 4
+    - 5
+    - 6
+  - example_dictionary_4:
+    - 7
+    - 8
+    - 9
+...
+```
+
+in Python:
+
+```
+{'example_dictionary_1': [{'example_dictionary_2': [1, 2, 3]},
+                          {'example_dictionary_3': [4, 5, 6]},
+                          {'example_dictionary_4': [7, 8, 9]}]}
+```
+
+### Useful Links:
+https://en.wikipedia.org/wiki/YAML#History_and_name
+
+https://yaml.org/spec/
+___
+
+## Playbooks
+### Structure
+```
+---
+# The 'minus' below  indicates a list item. The playbook contains a list of plays, with each play being a dictionary.
+
+-
+ # Hosts: targets
+
+ # Vars: Variables that will apply to the playbook on all target systems
+
+ # Tasks: list of tasks to execute. Also used for pre/post tasks.
+
+ # Handlers: list of handlers that are executed to notify 
+
+ # Roles: List of roles to be imported into play
+
+...
+```
+
+-
+
