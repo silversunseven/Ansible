@@ -114,9 +114,9 @@ ansible_port=22
 | ansible linux -m ping -e 'ansible_port=2222' -o| -e is for overiding EXTRA_VARS. These override any vars previously setS |
 
 Ansible uses colours to show the state:
-<p style="color:red;">Failure</p> 
-<p style="color:green;">Success</p>
-<p style="color:yellow;">Changed</p>
+<p style="color:red;">Failure in red</p>
+<p style="color:green;">Success in green</p>
+<p style="color:yellow;">Changed in yellow</p>
 
 This Inventory file can be written as an ini, yaml or json. For exmaple:
 
