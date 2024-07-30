@@ -9,6 +9,8 @@
 - [Ansible Documentation](#ansible-documentation)
 - [YAML](#yaml)
 - [Playbooks](#playbooks)
+- [Variables](#variables)
+- [Ansible Playbooks, facts](#ansible-playbooks-facts)
 
 ## Distribute Key to managed hosts
 ```
@@ -705,6 +707,702 @@ ___
  
   # Roles: list of roles to be imported into the play
  
+# Three dots indicate the end of a YAML document
+...
+```
+___
+
+## Variables
+
+### Different way to set and access variables:
+Here i am using a combination of files to demonstrate different ways to set and access variables.
+
+#### hosts (inventory file):
+```
+[control]
+ubuntu-c ansible_connection=local
+
+[centos]
+centos1 ansible_port=22
+centos[2:3] ARHostVar=monkey
+
+[centos:vars]
+ansible_user=root
+
+[ubuntu]
+ubuntu[1:3]
+
+[ubuntu:vars]
+ansible_become=true
+ansible_become_pass=password
+
+[linux:children]
+centos
+ubuntu
+
+[all:vars]
+mygroupvar=toes
+```
+
+#### external_vars.yaml (external variable file):
+```
+---
+  XNumOfCats : 2
+
+  Xnoofie:
+    fur : grey
+    legs : four
+    eyes : hazel
+
+  Xshopping_list:
+    - milk
+    - butter
+    - cheese
+
+  # Using the Inline method
+  Xballs:
+    {fur: white, legs: four, eyes: blue}
+
+  Xnew_shopping_list:
+    [ oatly, olives, feta]
+...
+````
+
+#### variables_playbook.yaml (playbook):
+```
+---
+# YAML documents begin with the document separator ---
+ 
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+ 
+  # Hosts: where our play will run and options it will run with
+  hosts: centos1, centos2
+  gather_facts: True #needed to get hostvars
+
+  # Var promting
+  vars_prompt:
+    - name: numOfFingers
+      private: False 
+    - name: secret
+      private: True
+
+  # Using an external file to source vars
+  vars_files:
+    - external_vars.yaml
+
+
+  # Vars: variables that will apply to the play, on all target systems
+  vars:
+    NumOfCats : 2
+
+    noofie:
+      fur : grey
+      legs : four
+      eyes : hazel
+
+    shopping_list:
+      - milk
+      - butter
+      - cheese
+
+    # Using the Inline method
+    balls:
+      {fur: white, legs: four, eyes: blue}
+
+    new_shopping_list:
+      [ oatly, olives, feta]
+
+
+
+  # Tasks: the list of tasks that will be executed within the playbook
+  tasks:
+    - name: Test vars_prompt
+      debug:
+        msg: "You passed in {{ numOfFingers }} fingers"
+
+    - name: Test vars_promt with private on
+      debug:
+        msg: "You passed in {{ secret }} as your secret"
+
+
+    - name: Print NumOfCats var
+      debug:
+        msg: "{{ NumOfCats }}"
+
+    - name: Print Full noofie dictionary
+      debug:
+        msg: "{{ noofie }}"
+ 
+    - name: Print Value of eyes from noofie dictionary
+      debug:
+        msg: "{{ noofie.eyes }}"
+ 
+    - name: Print Value of eyes from balls dictionary
+      debug:
+        msg: "{{ balls['eyes'] }}"
+
+    - name: Print the 3rd item in the shoppinglist
+      debug:
+        msg: "{{ shopping_list[2] }}"
+
+    - name: Print the 3rd item in the new_shoppinglist
+      debug:
+        msg: "{{ new_shopping_list[2] }}"
+
+    - name: Print var from exrternal file source
+      debug:
+        msg: "{{ Xnew_shopping_list[2] }}"
+
+    - name: Accesing a hostvars assigned by gathering facts
+      debug:
+        msg: "{{ hostvars[ansible_hostname].ansible_os_family }}"
+
+    - name: Accessing hostvars, and if not exiting assign default
+      debug:
+        msg: "{{ hostvars[ansible_hostname].ARHostVar | default('none') }}"
+
+    - name: Accessing groupvars
+      debug:
+        msg: "{{ hostvars[ansible_hostname].mygroupvar | default('none') }}"
+
+# Three dots indicate the end of a YAML document
+...
+```
+
+#### Output:
+```
+$ ansible-playbook variables_playbook.yaml 
+numOfFingers: 10
+secret: 
+
+PLAY [centos1, centos2] **************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ***************************************************************************************************************************************************************************************************
+ok: [centos1]
+ok: [centos2]
+
+TASK [Test vars_prompt] **************************************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "You passed in 10 fingers"
+}
+ok: [centos2] => {
+    "msg": "You passed in 10 fingers"
+}
+
+TASK [Test vars_promt with private on] ***********************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "You passed in SchneeScnhaSchnoofie as your secret"
+}
+ok: [centos2] => {
+    "msg": "You passed in SchneeScnhaSchnoofie as your secret"
+}
+
+TASK [Print NumOfCats var] ***********************************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": 2
+}
+ok: [centos2] => {
+    "msg": 2
+}
+
+TASK [Print Full noofie dictionary] **************************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": {
+        "eyes": "hazel",
+        "fur": "grey",
+        "legs": "four"
+    }
+}
+ok: [centos2] => {
+    "msg": {
+        "eyes": "hazel",
+        "fur": "grey",
+        "legs": "four"
+    }
+}
+
+TASK [Print Value of eyes from noofie dictionary] ************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "hazel"
+}
+ok: [centos2] => {
+    "msg": "hazel"
+}
+
+TASK [Print Value of eyes from balls dictionary] *************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "blue"
+}
+ok: [centos2] => {
+    "msg": "blue"
+}
+
+TASK [Print the 3rd item in the shoppinglist] ****************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "cheese"
+}
+ok: [centos2] => {
+    "msg": "cheese"
+}
+
+TASK [Print the 3rd item in the new_shoppinglist] ************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "feta"
+}
+ok: [centos2] => {
+    "msg": "feta"
+}
+
+TASK [Print var from exrternal file source] ******************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "feta"
+}
+ok: [centos2] => {
+    "msg": "feta"
+}
+
+TASK [Accesing a hostvars assigned by gathering facts] *******************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "RedHat"
+}
+ok: [centos2] => {
+    "msg": "RedHat"
+}
+
+TASK [Accessing hostvars, and if not exiting assign default] *************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "none"
+}
+ok: [centos2] => {
+    "msg": "monkey"
+}
+
+TASK [Accessing groupvars] ***********************************************************************************************************************************************************************************************
+ok: [centos1] => {
+    "msg": "toes"
+}
+ok: [centos2] => {
+    "msg": "toes"
+}
+
+PLAY RECAP ***************************************************************************************************************************************************************************************************************
+centos1                    : ok=13   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+centos2                    : ok=13   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+````
+___
+
+### Passing in Extravars 
+```
+ansible-playbook variables_playbook.yaml -e DeleteData=True
+```
+
+### Vars as directory/files
+You can also use this structure from where you inventory file is found to define host and group vars.
+```
+.
+├── group_vars
+│   ├── centos
+│   └── ubuntu
+├── host_vars
+│   ├── centos1
+│   └── ubuntu-c
+├── hosts
+
+```
+
+## Ansible Playbooks, Facts
+### Facts
+https://docs.ansible.com/ansible/latest/collections/ansible/builtin/setup_module.html
+
+You can use a filter(with wildcards) on the setup module to extract info, for example the command :
+
+`ansible centos1 -m setup -a 'filter=ansible_mem*'`
+```
+$ ansible centos1 -m setup -a 'filter=ansible_mem*'
+centos1 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_memfree_mb": 3142,
+        "ansible_memory_mb": {
+            "nocache": {
+                "free": 6257,
+                "used": 1584
+            },
+            "real": {
+                "free": 3142,
+                "total": 7841,
+                "used": 4699
+            },
+            "swap": {
+                "cached": 0,
+                "free": 1023,
+                "total": 1023,
+                "used": 0
+            }
+        },
+        "ansible_memtotal_mb": 7841,
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false
+}
+```
+and to be more specific :
+```
+$ ansible centos1 -m setup -a 'filter=ansible_memfree_mb'
+centos1 | SUCCESS => {
+    "ansible_facts": {
+        "ansible_memfree_mb": 3147,
+        "discovered_interpreter_python": "/usr/bin/python3.9"
+    },
+    "changed": false
+}
+````
+
+! Important: Any module that returns a dictionary called `ansible_facts` will add the variables to the root of the `vars` namespace. To reference the var in ansible_facts, you do not need to use the key `ansible_facts` instead just refenced the next level directly, for example:
+
+```
+$ ansible -m setup centos1 |less
+centos1 | SUCCESS => {
+    "ansible_facts": {                              <- ignore root ansible_facts
+        "ansible_all_ipv4_addresses": [
+            "172.18.0.8"
+        ],
+        "ansible_all_ipv6_addresses": [],
+        "ansible_apparmor": {
+            "status": "disabled"
+        },
+        <...>
+        "ansible_default_ipv4": {                   <- first key
+            "address": "172.18.0.8",                <- sub key
+            "alias": "eth0",
+            "broadcast": "172.18.255.255",
+            "gateway": "172.18.0.1",
+````
+
+So in the playbook it looks like this :
+```
+  tasks:
+    - name: Show IP Address
+      debug:
+        msg: "{{ ansible_default_ipv4.address }}"
+
+```
+### Custom Facts
+* By default Ansible expects to use `/etc/ansible/facts.d`
+* Can by written in any language, but must Returns `json` | `ini` structure (`ìni` needs a catagory else it will fail.)
+* Also available as `{{ hostvars[ansible_hostname].ansilbe_local.getdate1.date }}`
+
+___
+
+#### json example (must exist on remote system and be executable)
+/etc/ansible/facts.d/getdate1.fact    
+```
+#!/bin/bash
+echo {\""date\"" : \""`date`\""}
+```
+___
+
+#### ini example (must exist on remote system and be executable)
+/etc/ansible/facts.d/getdate2.fact 
+```
+#!/bin/bash
+echo [date]
+echo date=`date`
+```
+___
+* If you now run the setup module it will run those custom facts and add them to `ansible_local` which can in this case be referenced with `ansible_local.getdate1.date` or `ansible_local.getdate2.date.date` in a playbook.
+* These local vars can also be reference in hostvars:
+
+          `{{ hostvars[ansible_hostname].ansible_local.getdate1.date }}`
+          `{{ hostvars[ansible_hostname].ansible_local.getdate2.date.date }}`
+
+```
+$ ansible -m setup ubuntu-c -a 'filter=ansible_local'
+ubuntu-c | SUCCESS => {
+    "ansible_facts": {
+        "ansible_local": {                                             <- first key
+            "getdate1": {                                              <- sub key
+                "date": "Thu Jul 25 09:29:38 UTC 2024"                 <- sub-sub key
+            },
+            "getdate2": {                                              <- sub key
+                "date": {                                              <- sub-sub key
+                    "date": "Thu Jul 25 09:29:38 UTC 2024"             <- sub-sub-sub key (because ini catagory)
+                }
+            }
+        },
+        "discovered_interpreter_python": "/usr/bin/python3.10"
+    },
+    "changed": false
+}
+```
+
+
+### Example to propegate facts to a remote system , refresh facts and rerun.
+
+```
+---
+# YAML documents begin with the document separator ---
+
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+
+  # Tasks: the list of tasks that will be executed within the play, this section
+  # can also be used for pre and post tasks
+  tasks:
+
+    - name: Make Facts Dir
+      file:
+        path: /etc/ansible/facts.d
+        recurse: yes
+        state: directory
+
+    - name: Copy Fact 1
+      copy:
+        src: /etc/ansible/facts.d/getdate1.fact
+        dest: /etc/ansible/facts.d/getdate1.fact
+        mode: 0755
+
+    - name: Copy Fact 2
+      copy:
+        src: /etc/ansible/facts.d/getdate2.fact
+        dest: /etc/ansible/facts.d/getdate2.fact
+        mode: 0755
+
+    - name: Refresh Facts
+      setup:
+
+    - name: Show IP Address
+      debug:
+        msg: "{{ ansible_default_ipv4.address }}"
+
+    - name: Show Custom Fact 1
+      debug:
+        msg: "{{ ansible_local.getdate1.date }}"
+
+    - name: Show Custom Fact 2
+      debug:
+        msg: "{{ ansible_local.getdate2.date.date }}"
+
+    - name: Show Custom Fact 1 in hostvars
+      debug:
+        msg: "{{ hostvars[ansible_hostname].ansible_local.getdate1.date }}"
+
+    - name: Show Custom Fact 2 in hostvars
+      debug:
+        msg: "{{hostvars[ansible_hostname].ansible_local.getdate2.date.date }}"
+
+# Three dots indicate the end of a YAML document
+...
+```
+
+
+### Example to propegate facts to a remote system , refresh facts and rerun. (Using non root custom factsdir)
+```
+---
+# YAML documents begin with the document separator ---
+
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+
+  # Tasks: the list of tasks that will be executed within the play, this section
+  # can also be used for pre and post tasks
+  tasks:
+
+    - name: Make Facts Dir
+      file:
+        path: /home/ansible/facts.d
+        recurse: yes
+        state: directory
+        owner: ansible
+
+    - name: Copy Fact 1
+      copy:
+        src: facts.d/getdate1.fact
+        dest: /home/ansible/facts.d/getdate1.fact
+        owner: ansible
+        mode: 0755
+
+    - name: Copy Fact 2
+      copy:
+        src: facts.d/getdate2.fact
+        dest: /home/ansible/facts.d/getdate2.fact
+        owner: ansible
+        mode: 0755
+
+    - name: Reload Facts
+      setup:
+        fact_path: /home/ansible/facts.d                              <- Important part
+
+    - name: Show IP Address
+      debug:
+        msg: "{{ ansible_default_ipv4.address }}"
+
+    - name: Show Custom Fact 1
+      debug:
+        msg: "{{ ansible_local.getdate1.date }}"
+
+    - name: Show Custom Fact 2
+      debug:
+        msg: "{{ ansible_local.getdate2.date.date }}"
+
+    - name: Show Custom Fact 1 in hostvars
+      debug:
+        msg: "{{ hostvars[ansible_hostname].ansible_local.getdate1.date }}"
+
+    - name: Show Custom Fact 2 in hostvars
+      debug:
+        msg: "{{hostvars[ansible_hostname].ansible_local.getdate2.date.date }}"
+
+# Three dots indicate the end of a YAML document
+...
+```
+
+## Jinja2 templating
+
+Jinja2 is a templating system commonly used for configuration files but it can also contain contains conditional statements.
+The use of `break` and `continue` needs a special config in the `ansible.cfg` file :
+```
+jinja2_extensions = jinja2.ext.loopcontrols
+```
+
+Here are a few examples of how to use jinja2 in this playbook:
+NOTE: the `-` at the end of the `if` statement is used to remove the CR char.
+```
+---
+# YAML documents begin with the document separator ---
+
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+
+  # Hosts: where our play will run and options it will run with
+  hosts: all
+
+  # Tasks: the list of tasks that will be executed within the play, this section
+  # can also be used for pre and post tasks
+  tasks:
+    - name: Ansible Jinja2 if 
+      debug:
+        msg: >
+             --== Ansible Jinja2 if statement ==--
+
+             {# If the hostname is ubuntu-c, include a message -#}
+             {% if ansible_hostname == "ubuntu-c" -%}
+                   This is ubuntu-c
+             {% endif %}
+
+    - name: Ansible Jinja2 if elif
+      debug:
+        msg: >
+             --== Ansible Jinja2 if elif statement ==--
+
+             {% if ansible_hostname == "ubuntu-c" -%}
+                This is ubuntu-c
+             {% elif ansible_hostname == "centos1" -%}
+                This is centos1 with it's modified SSH Port
+             {% endif %}
+
+    - name: Ansible Jinja2 if elif else
+      debug:
+        msg: >
+             --== Ansible Jinja2 if elif else statement ==--
+
+             {% if ansible_hostname == "ubuntu-c" -%}
+                This is ubuntu-c
+             {% elif ansible_hostname == "centos1" -%}
+                This is centos1 with it's modified SSH Port
+             {% else -%}
+                This is good old {{ ansible_hostname }}
+             {% endif %}
+
+
+    - name: Ansible Jinja2 if variable is defined ( where variable is defined )
+      debug:
+        msg: >
+             --== Ansible Jinja2 if variable is defined ( where variable is defined ) ==--
+
+             {% set example_variable = 'defined' -%}
+             {% if example_variable is defined -%}
+                example_variable is defined
+             {% else -%}
+                example_variable is not defined
+             {% endif %}
+
+    - name: Ansible Jinja2 for statement
+      debug:
+        msg: >
+             --== Ansible Jinja2 for statement ==--
+
+             {% for entry in ansible_interfaces -%}
+                Interface entry {{ loop.index }} = {{ entry }}
+             {% endfor %}
+
+    - name: Ansible Jinja2 for range
+      debug:
+        msg: >
+             --== Ansible Jinja2 for range
+
+             {% for entry in range(1, 11) -%}
+                {{ entry }}
+             {% endfor %}
+
+    - name: Ansible Jinja2 for range, reversed (continue if odd)
+      debug:
+        msg: >
+             --== Ansible Jinja2 for range, reversed (continue if odd) ==--
+
+             {% for entry in range(10, 0, -1) -%}
+                {% if entry is odd -%}
+                   {% continue %}
+                {% endif -%}
+                {{ entry }}
+             {% endfor %}
+
+    - name: Ansible Jinja2 filters
+      debug:
+        msg: >
+             ---=== Ansible Jinja2 filters ===---
+
+             --== min [1, 2, 3, 4, 5] ==--
+
+             {{ [1, 2, 3, 4, 5] | min }}
+
+             --== max [1, 2, 3, 4, 5] ==--
+
+             {{ [1, 2, 3, 4, 5] | max }}
+
+             --== unique [1, 1, 2, 2, 3, 3, 4, 4, 5, 5] ==--
+
+             {{ [1, 1, 2, 2, 3, 3, 4, 4, 5, 5] | unique }}
+
+             --== difference [1, 2, 3, 4, 5] vs [2, 3, 4] ==--
+
+             {{ [1, 2, 3, 4, 5] | difference([2, 3, 4]) }}
+
+             --== random ['rod', 'jane', 'freddy'] ==--
+
+             {{ ['rod', 'jane', 'freddy'] | random }}
+
+             --== urlsplit hostname ==--
+
+             {{ "http://docs.ansible.com/ansible/latest/playbooks_filters.html" | urlsplit('hostname') }}
+
+    - name: Jinja2 template
+      template:
+        src: template.j2
+        dest: "/tmp/{{ ansible_hostname }}_template.out"
+        trim_blocks: true
+        mode: 0644
+
 # Three dots indicate the end of a YAML document
 ...
 ```
