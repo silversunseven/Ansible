@@ -11,6 +11,11 @@
 - [Playbooks](#playbooks)
 - [Variables](#variables)
 - [Ansible Playbooks, facts](#ansible-playbooks-facts)
+- [Jinja2 Templating](#jinja2-templating)
+- [Playbooks - Advanced](#playbooks---advanced)
+- [Dynamic Inventories](#dynamic-inventories)
+- [Register and When](#register-and-when)
+- [Looping](#looping)
 
 ## Distribute Key to managed hosts
 ```
@@ -661,12 +666,12 @@ ___
 
 -> `gather_facts: False` will not run the setup module.
 
--> `"{{ var_name }}"` is a Jinja2 variable used by the jinja2 templating system.
+-> `"{{ var_name }}"` is a Jinja2 variable used by the jinja2 templating system. In Ansible playbooks, Jinja2 template expressions <b>should be quoted</b> to ensure they are correctly interpreted.
 
 -> Handlers use the notify key inside a task. the execute once after there has been a change. `notify:`and `when:` will call the `handler`matching the `notify` name. 
 
--> aHere we gather facts so we can get the `ansible_distribution` variable.
-ß
+-> Here we gather facts so we can get the `ansible_distribution` variable.
+
 ```
 ---
 # YAML documents begin with the document separator ---
@@ -768,7 +773,7 @@ mygroupvar=toes
 ...
 ````
 
-#### variables_playbook.yaml (playbook):
+#### variables_playbook.yaml (playbook)  -> Here we read a variable file in with vars_files:
 ```
 ---
 # YAML documents begin with the document separator ---
@@ -1406,3 +1411,1052 @@ NOTE: the `-` at the end of the `if` statement is used to remove the CR char.
 # Three dots indicate the end of a YAML document
 ...
 ```
+
+### Example playbook
+* This playbook will direct actions to the linux group which contains 3 centos hosts and 3 ubuntu hosts.
+* It will read in a variable file
+* install epel on centos hosts (Extra Packages for Enterprise Linux (EPEL) repository. EPEL is a repository of high-quality add-on packages for Linux distributions such as Red Hat Enterprise Linux (RHEL), CentOS, and Fedora. These packages are maintained by the Fedora Project and provide additional software that is not included in the standard RHEL/CentOS repositories. )
+* Install Nginx and unzip using dnf 
+* we set this in `ansible.cfg` and reference this variable in our src template file so people know the file is ansible managed.
+* we install a html landing page and unzip a file as an easter egg. After nginx restarts there is a notify to a handler to check if we still get HTTP status 200
+ ```
+[defaults]
+ansible_managed = Managed by Ansible - file : {file} - host:{host} - uid:{uid}
+ ```
+___
+
+```
+---
+# YAML documents begin with the document separator ---
+
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+
+  # Vars: variables that will apply to the play, on all target systems
+  vars_files: 
+    - vars/logos.yaml
+
+  # Tasks: the list of tasks that will be executed within the play, this section
+  # can also be used for pre and post tasks
+  tasks:
+
+    - name: Install Epel on centos
+      ansible.builtin.dnf:
+        name: epel-release
+        update_cache: yes
+        state: latest
+      when: ansible_distribution == 'CentOS'
+
+    - name: Install Nginx
+      ansible.builtin.package:
+        name: nginx
+        update_cache: yes
+        state: latest
+
+    - name: Install unzip
+      ansible.builtin.package:
+        name: unzip
+        update_cache: yes
+        state: latest
+
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+      notify:
+        - Check HTTP Service
+
+    - name: Template index.html-ansible_managed.j2 to index.html on target
+      ansible.builtin.template:
+        src: index.html-easter_egg.j2
+        dest: "{{ nginx_root_location }}/index.html"
+        mode: 0644
+
+    - name: Unarchive playbook stacker game
+      ansible.builtin.unarchive:
+        src: playbook_stacker.zip
+        dest: "{{ nginx_root_location }}"
+        mode: 0755
+
+  # Handlers: the list of handlers that are executed as a notify key from a task
+  handlers:
+    - name: Check HTTP Service 
+      ansible.builtin.uri:
+        url: http://{{ ansible_default_ipv4.address }}
+        status_code: 200
+
+# Three dots indicate the end of a YAML document
+...
+```
+___
+
+## Playbooks - Advanced!
+### Useful Modules
+#### set_fact:
+To get module information i find the best is to use eg) `ansible-doc set_fact` This allows you to see how it works, what flags can be added and most helpful it provides examples at the bottom.
+```
+---
+-
+
+  #hosts
+  hosts: ubuntu2, centos2
+
+  #tasks
+  tasks:
+    - name: Set custom facts if dist is Ubuntu
+      ansible.builtin.set_fact:
+        PORT: 80
+        DIR: /var/www/html
+        USER: ansible
+      when: ansible_distribution == "Ubuntu"
+
+    - name: Set custom facts if dist is Centos
+      ansible.builtin.set_fact:
+        PORT: 8080
+        DIR: /var/www/html2
+        USER: webuser
+      when: ansible_distribution == "CentOS"    
+
+    - name: print facts
+      ansible.builtin.debug:
+        msg: "Port:{{PORT}} Dir {{DIR}} User: {{USER}}" 
+  #handlers
+
+...
+````
+___
+#### wait_for: 
+```
+---
+-
+  hosts: ubuntu2, centos2
+
+  tasks:
+    - name: stop nginx
+      ansible.builtin.service:
+        name: nginx
+        state: stopped
+
+    - name: Check when up
+      ansible.builtin.wait_for:
+        port: 80
+        state: started
+        msg: "checking when up"
+      notify: webserver up
+
+  handlers:
+    - name: webserver up
+      ansible.builtin.debug:
+        msg: "Webserver up"
+...
+```
+___
+#### assemble:
+```
+---
+-
+
+  hosts: ubuntu-c
+
+  tasks:
+    - name: Assemble configs
+      ansible.builtin.assemble:
+        src: conf.d
+        dest: sshd_config
+...
+````
+___
+#### add_host:
+Here we use 2 plays in the playbook, this is done with `-`
+```
+---
+-
+  #hosts
+  hosts: ubuntu-c
+
+  #tasks
+  tasks:
+    - name: Add host to adhoc groups
+      ansible.builtin.add_host:
+        name: centos1
+        groups: adhoc1, adhoc2
+
+  #handlers
+
+- 
+  #hosts
+  hosts: adhoc1
+
+  #tasks
+  tasks:
+    - name: ping all hosts
+      ansible.builtin.ping:
+
+  #handlers
+  
+...
+```
+___
+#### group_by:
+```
+---
+-
+  #hosts
+  hosts: ubuntu-c
+
+  #tasks
+  tasks:
+    - name: Add host to adhoc groups
+      ansible.builtin.add_host:
+        name: centos1
+        groups: adhoc1, adhoc2
+
+  #handlers
+
+- 
+  #hosts
+  hosts: adhoc1
+
+  #tasks
+  tasks:
+    - name: ping all hosts
+      ansible.builtin.ping:
+
+  #handlers
+  
+...
+````
+___
+#### fetch:
+```
+---
+-
+  #hosts
+  hosts: centos
+
+  #tasks
+  tasks:
+    - name: Fetch /etc/redhat-release
+      ansible.builtin.fetch:
+        src: /etc/redhat-release
+        dest: dump
+
+  #handlers
+...
+```
+___
+
+## Dynamic Inventories
+* Needs to be an executable file.
+* Can be written in any language providing that it can be executed from the command line
+* Accepts the command line options of --list and --host hostname
+* returns a JSON enconded dictionary of inventory content with --list
+* returns a basic JSON enconded dictionary for --host hostname
+* AWS dynamic inventories is a good template if you want to develop an interface with your own internal inventory system.
+
+### Example - inventory.py
+```
+#!/usr/bin/env python3
+
+'''
+Dynamic inventory for Ansible in Python
+'''
+
+# Use print functionality from Python 3 for compatibility
+from __future__ import print_function
+
+import argparse
+import logging
+
+# Attempt to import json, if it fails, import simplejson
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
+# Inherit from object for Python 2/3 compatibility
+class Inventory(object):
+
+    # Constructor
+    def __init__(self, include_hostvars_in_list):
+
+        # Configure logger
+        #self.configure_logger()
+
+        # Capture and store include_hostvars_in_list
+        self.include_hostvars_in_list = include_hostvars_in_list
+
+        # Capture the script command line arguments
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--list', action='store_true',
+                            help='list inventory')
+        parser.add_argument('--host', action='store',
+                            help='show HOST variables')
+        self.args = parser.parse_args()
+
+        # If not called with --host or --list, show usage and exit
+        if not (self.args.list or self.args.host):
+            parser.print_usage()
+            raise SystemExit
+
+        # Capture and store the inventory
+        self.define_inventory()
+
+        # When called with --list, print the inventory
+        if self.args.list:
+            self.print_json(self.list())
+
+        # If called with --host, print host information
+        elif self.args.host:
+            self.print_json(self.host())
+
+    def define_inventory(self):
+        self.groups = {
+            "centos": {
+                "hosts": ["centos1", "centos2", "centos3"],
+                "vars": {
+                    "ansible_user": 'root'
+                }
+            },
+            "control": {
+                "hosts": ["ubuntu-c"],
+            },
+            "ubuntu": {
+                "hosts": ["ubuntu1", "ubuntu2", "ubuntu3"],
+                "vars": {
+                    "ansible_become": True,
+                    "ansible_become_pass": 'password'
+                }
+            },
+            "linux": {
+                "children": ["centos", "ubuntu"],
+            }}
+
+        self.hostvars = {
+            'centos1': {
+                'ansible_port': 22
+            },
+            'ubuntu-c': {
+                'ansible_connection': 'local'
+            }
+        }
+
+    # Pretty print JSON
+    def print_json(self, content):
+        print(json.dumps(content, indent=4, sort_keys=True))
+
+    # Return inventory dictionary
+    def list(self):
+
+        #self.logger.info('list executed')
+
+        # If include_hostvars_in_list is True, merge the hostvars
+        # as _meta data
+        if self.include_hostvars_in_list:
+            merged = self.groups
+            merged['_meta'] = {}
+            merged['_meta']['hostvars'] = self.hostvars
+            return merged
+
+        # Otherwise, return the groups without hostvars
+        else:
+            return self.groups
+
+    # Return host dictionary
+    def host(self):
+
+        #self.logger.info('host executed for {}'.format(self.args.host))
+
+        # If the requested hosts exists in hostvars, return it
+        if self.args.host in self.hostvars:
+            return self.hostvars[self.args.host]
+
+        # Otherwise, return an empty list
+        else:
+            return {}
+
+    # Logger, for debugging as stdout is used by the script
+    def configure_logger(self):
+        self.logger = logging.getLogger('ansible_dynamic_inventory')
+        self.hdlr = logging.FileHandler('/var/tmp/ansible_dynamic_inventory.log')
+        self.formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        self.hdlr.setFormatter(self.formatter)
+        self.logger.addHandler(self.hdlr) 
+        self.logger.setLevel(logging.DEBUG)
+
+# Call the Inventory class constructor (__init__)
+# Pass include_hostsvars_in_list as True to include hostvars
+# as _meta data in list output
+Inventory(include_hostvars_in_list=False)
+```
+
+## Register and When
+### Register
+This can be used in most modules to create a variable/fact. 
+```
+---
+-
+  #hosts
+  hosts: all
+
+  #tasks
+  tasks:
+    - name: Explore register
+      ansible.builtin.command:
+        cmd: hostname -s
+      register: name
+
+    - name: print var
+      ansible.builtin.debug:
+        msg: "hostname is {{ name.stdout }}"
+
+  #handlers
+...
+```
+Result:
+```
+ok: [ubuntu-c] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'ubuntu-c', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.402118', 'end': '2024-08-02 07:13:08.404075', 'delta': '0:00:00.001957', 'msg': '', 'stdout_lines': ['ubuntu-c'], 'stderr_lines': [], 'failed': False}"
+}
+ok: [centos1] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'centos1', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.430362', 'end': '2024-08-02 07:13:08.432887', 'delta': '0:00:00.002525', 'msg': '', 'stdout_lines': ['centos1'], 'stderr_lines': [], 'failed': False}"
+}
+ok: [centos2] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'centos2', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.439861', 'end': '2024-08-02 07:13:08.441343', 'delta': '0:00:00.001482', 'msg': '', 'stdout_lines': ['centos2'], 'stderr_lines': [], 'failed': False}"
+}
+ok: [centos3] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'centos3', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.439563', 'end': '2024-08-02 07:13:08.441136', 'delta': '0:00:00.001573', 'msg': '', 'stdout_lines': ['centos3'], 'stderr_lines': [], 'failed': False}"
+}
+ok: [ubuntu1] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'ubuntu1', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.456060', 'end': '2024-08-02 07:13:08.457332', 'delta': '0:00:00.001272', 'msg': '', 'stdout_lines': ['ubuntu1'], 'stderr_lines': [], 'failed': False}"
+}
+ok: [ubuntu2] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'ubuntu2', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.575506', 'end': '2024-08-02 07:13:08.576585', 'delta': '0:00:00.001079', 'msg': '', 'stdout_lines': ['ubuntu2'], 'stderr_lines': [], 'failed': False}"
+}
+ok: [ubuntu3] => {
+    "msg": "hostname is {'changed': True, 'stdout': 'ubuntu3', 'stderr': '', 'rc': 0, 'cmd': ['hostname', '-s'], 'start': '2024-08-02 07:13:08.589289', 'end': '2024-08-02 07:13:08.590358', 'delta': '0:00:00.001069', 'msg': '', 'stdout_lines': ['ubuntu3'], 'stderr_lines': [], 'failed': False}"
+}
+```
+
+Register creates a dictionary object which can be queried with dot notation. In this case we are pulling out the stdout part, but there is much more :
+```
+{
+  'changed': True,
+  'stdout': 'ubuntu3', 
+  'stderr': '', 
+  'rc': 0, 
+  'cmd': ['hostname', '-s'], 
+  'start': '2024-08-02 07:13:08.589289', 
+  'end': '2024-08-02 07:13:08.590358', 
+  'delta': '0:00:00.001069', 
+  'msg': '', 
+  'stdout_lines': ['ubuntu3'], 
+  'stderr_lines': [], 
+  'failed': False
+  }
+```
+
+### When
+When (like register) is used outside the module and applies to most modules. Below we can provide multiple conditions that the task needs to meet in order for it to be executed.
+
+```
+---
+-
+  # hosts
+  hosts: all
+
+  # vars
+  
+  # tasks
+  tasks:
+    - name: get hostname for specific dists
+      ansible.builtin.command:
+        cmd: hostname -s
+      when: ( ansible_distribution == "CentOS" and ansible_distribution_major_version == 9 ) or 
+            ( ansible_distribution == "Ubuntu" and ansible_distribution_major_version == 22 )
+
+    - name: debuging
+      ansible.builtin.debug:
+        msg: "ansible_distribution is {{ansible_distribution}}. ansible_distribution_major_version is {{ansible_distribution_major_version }} "
+
+  # handlers
+...
+```
+
+Result:
+```
+PLAY [all] *************************************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *************************************************************************************************************************************************************************************************************************
+ok: [ubuntu-c]
+ok: [centos3]
+ok: [centos2]
+ok: [centos1]
+ok: [ubuntu1]
+ok: [ubuntu3]
+ok: [ubuntu2]
+
+TASK [get hostname for specific dists] *********************************************************************************************************************************************************************************************************
+skipping: [ubuntu-c]
+skipping: [centos1]
+skipping: [centos2]
+skipping: [centos3]
+skipping: [ubuntu1]
+skipping: [ubuntu2]
+skipping: [ubuntu3]
+
+TASK [debuging] ********************************************************************************************************************************************************************************************************************************
+ok: [ubuntu-c] => {
+    "msg": "ansible_distribution is Ubuntu. ansible_distribution_major_version is 22 "
+}
+ok: [centos1] => {
+    "msg": "ansible_distribution is CentOS. ansible_distribution_major_version is 9 "
+}
+ok: [centos2] => {
+    "msg": "ansible_distribution is CentOS. ansible_distribution_major_version is 9 "
+}
+ok: [centos3] => {
+    "msg": "ansible_distribution is CentOS. ansible_distribution_major_version is 9 "
+}
+ok: [ubuntu1] => {
+    "msg": "ansible_distribution is Ubuntu. ansible_distribution_major_version is 22 "
+}
+ok: [ubuntu2] => {
+    "msg": "ansible_distribution is Ubuntu. ansible_distribution_major_version is 22 "
+}
+ok: [ubuntu3] => {
+    "msg": "ansible_distribution is Ubuntu. ansible_distribution_major_version is 22 "
+}
+
+PLAY RECAP *************************************************************************************************************************************************************************************************************************************
+centos1                    : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+centos2                    : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+centos3                    : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+ubuntu-c                   : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+ubuntu1                    : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+ubuntu2                    : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+ubuntu3                    : ok=2    changed=0    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+
+```
+
+Another way to use it is as follows:
+
+```
+---
+-
+  # hosts
+  hosts: all
+
+  # vars
+  
+  # tasks
+  tasks:
+    - name: get hostname for specific dists
+      ansible.builtin.command:
+        cmd: hostname -s
+      when:
+        - ansible_distribution == "CentOS"
+        - ansible_distribution_major_version | int >= 8
+      register: cmdreg
+
+    - name: debuging
+      ansible.builtin.debug:
+        msg: "This host has CentOS with major v8 or higher"
+      when: cmdreg is changed
+
+    - name: debuging
+      ansible.builtin.debug:
+        msg: "This host has not CentOS"
+      when: cmdreg is skipped
+
+  # handlers
+...
+```
+
+Result:
+```
+
+PLAY [all] ************************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ************************************************************************************************************************************************************************************************
+ok: [ubuntu-c]
+ok: [centos1]
+ok: [centos3]
+ok: [centos2]
+ok: [ubuntu1]
+ok: [ubuntu2]
+ok: [ubuntu3]
+
+TASK [get hostname for specific dists] ********************************************************************************************************************************************************************************
+skipping: [ubuntu-c]
+skipping: [ubuntu1]
+skipping: [ubuntu2]
+skipping: [ubuntu3]
+changed: [centos2]
+changed: [centos1]
+changed: [centos3]
+
+TASK [debuging] *******************************************************************************************************************************************************************************************************
+skipping: [ubuntu-c]
+ok: [centos1] => {
+    "msg": "This host has CentOS with major v8 or higher"
+}
+ok: [centos2] => {
+    "msg": "This host has CentOS with major v8 or higher"
+}
+ok: [centos3] => {
+    "msg": "This host has CentOS with major v8 or higher"
+}
+skipping: [ubuntu1]
+skipping: [ubuntu2]
+skipping: [ubuntu3]
+
+TASK [debuging] *******************************************************************************************************************************************************************************************************
+ok: [ubuntu-c] => {
+    "msg": "This host has not CentOS"
+}
+skipping: [centos1]
+skipping: [centos2]
+skipping: [centos3]
+ok: [ubuntu1] => {
+    "msg": "This host has not CentOS"
+}
+ok: [ubuntu2] => {
+    "msg": "This host has not CentOS"
+}
+ok: [ubuntu3] => {
+    "msg": "This host has not CentOS"
+}
+
+PLAY RECAP ************************************************************************************************************************************************************************************************************
+centos1                    : ok=3    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+centos2                    : ok=3    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+centos3                    : ok=3    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0   
+ubuntu-c                   : ok=2    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+ubuntu1                    : ok=2    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+ubuntu2                    : ok=2    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+ubuntu3                    : ok=2    changed=0    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+```
+
+## Looping
+There are mans with Items that exists, below are a few:
+
+| loop name                  | Explanation                                                    |
+|----------------------------|----------------------------------------------------------------|
+| `with`                     | group of loops                                                 |
+| `with_items`               | a simple list                                                  |
+| `with_nested`              | list of lists                                                  |
+| `with_dict`                | loop on a dictionary                                           |
+| `with_fileglob`            | list of files in dir(pattern match). Not recursive             |
+| `with_filetree`            | same as fileglob but recursive                                 |
+| `with_together`            | combine 2 lists eg (A,B,C) (1,2,3)  A related to 1 and so forth|
+| `with_sequence`            | range with interval                                            |
+| `with_random_choice`       | select a random value in a list                                |
+| `with_first_found`         | select first element                                           |
+| `with_lines`               | get each line of a file                                        |
+| `with_ini`                 | browse a file with ini format                                  |
+| `with_inventory_hostnames` | get hosts of the inventory file                                |
+| `with_subelements`         | list of dictionaries                                           |
+| `with_netsted`             | for each of these, do each of these loop                       |
+| `with_file`                | pass in a list of files                                        |
+
+
+
+### with_items
+* This will loop over each list item `-`so in the first case the first item is a dictionary.
+
+* * `{dir: "dir1", file: "fileA" }` and each item is referenced with `ìtem.dir` and `item.file`
+* in Python the dictionary will look like this:
+* * `item={ "dir":"dir1", "file":"fileA" }` and each item is referenced with `item["dir"]` and `item["file"]`
+
+```
+---
+-
+  #hosts
+  hosts: linux
+
+  tasks:
+    - name: create directories using with_items
+      ansible.builtin.file:
+        path: /home/ansible/playgroup/with_items/{{ item.dir }}/{{ item.file }}
+        state: touch
+        recurse: yes
+      with_items:
+        - {dir: "dir1", file: "fileA" }
+        - {dir: "dir2", file: "fileB" }
+        - {dir: "dir3", file: "fileC" }
+        - {dir: "dir4", file: "fileD" }
+...                                     
+```
+
+Another way to do this (and possibly beter). Important is whenever referencing a var it must be quoted `"{{ my_list }}"`:
+```
+---
+-
+  #hosts
+  hosts: linux
+
+  #vars:
+  vars:
+    my_list:
+    - {dir: "dir1", file: "fileA" }
+    - {dir: "dir2", file: "fileB" }
+    - {dir: "dir3", file: "fileC" }
+    - {dir: "dir4", file: "fileD" }
+
+  tasks:
+    - name: create directories using with_items
+      ansible.builtin.file:
+        path: /home/ansible/playgroup/with_items/{{ item.dir }}/{{ item.file }}
+        state: touch
+      with_items:
+      - "{{ my_list }}"
+...                                          
+```
+
+### with_fileglob
+Here you can specify a source directory and copy all files from that dir matching a certain pattern to a remote location.
+
+```
+---
+-
+  #hosts
+  hosts: linux
+
+  tasks:
+    - name: create directories using with_items
+      ansible.builtin.file:
+        path: "/home/ansible/playgroup/with_items/{{ item | basename }}"
+        state: touch
+      with_fileglob:
+      - filesSRC/file*.txt 
+...
+```
+
+### with_inventory_hostnames
+You can use this to create directories with each server name belonging to group `all`
+```
+---
+-
+  #hosts
+  hosts: linux
+
+  tasks:
+    - name: create directories using with_items
+      ansible.builtin.file:
+        path: "/tmp/{{ item }}"
+        state: touch
+      with_inventory_hostname:
+      - all
+...
+```
+
+On the remote system :
+```
+$ ls -lt /home/ansible/playgroup/with_items/fil*
+-rw-r--r-- 1 ansible ansible 0 Aug  6 06:07 /home/ansible/playgroup/with_items/fileA.txt
+-rw-r--r-- 1 ansible ansible 0 Aug  6 06:07 /home/ansible/playgroup/with_items/fileC.txt
+-rw-r--r-- 1 ansible ansible 0 Aug  6 06:07 /home/ansible/playgroup/with_items/fileB.txt
+```
+
+
+### with_dict
+
+```
+---
+-
+  #hosts
+  hosts: linux
+
+  #tasks
+  tasks:
+    - name: Create Users
+      ansible.builtin.user:
+        name: "{{ item.key }}"                  
+        comment: "{{ item.value.full_name }}"
+      with_dict:                                <- dictionary called with_dict contains other dicts
+        balls:                                  <- This is a dict called balls
+          full_name: "Snowball AKA Balls"       <- with key:value pair
+        noopie:
+          full_name: "Roxy AKA Scnhoofie"
+        numbnuts:
+          full_name: "Spanner"
+        numlocks:
+          full_name: "Mr Random"
+
+  #handlers
+...
+```
+
+user_dict in Python has both keys and values. The keys are the names like "balls," "noopie," "numbnuts," and "numlocks," and the values are nested dictionaries containing another key "full_name" and its corresponding value. So in this case the dictionary structure looks like this:
+```
+user_dict = {
+    "balls": {
+        "full_name": "Snowball AKA Balls"
+    },
+    "noopie": {
+        "full_name": "Roxy AKA Scnhoofie"
+    },
+    "numbnuts": {
+        "full_name": "Spanner"
+    },
+    "numlocks": {
+        "full_name": "Mr Random"
+    }
+}
+```
+* user_dict is derived from your Ansible with_dict structure. Outer dictionary called user_dict has a key called balls. the value of balls is a dictionary itself.
+* <b>Outer dictionary:</b> This has four keys: "balls," "noopie," "numbnuts," and "numlocks."
+* <b>Values of the outer</b> dictionary: Each of these keys maps to another dictionary.
+* <b>Inner dictionaries</b>: Each inner dictionary has a single key "full_name" with a corresponding value that is a string (e.g., "Snowball AKA Balls" for the key "balls").
+___
+
+### with_subelements
+This is a breakdown exaplanation of `with_subelements`
+```
+---
+-
+  #hosts
+  hosts: linux
+
+  #tasks
+  tasks:
+    - name: Create Users
+      ansible.builtin.user:
+        name: "{{ item.1 }}"                                 
+        comment: "{{ item.1 | title }} {{item.0.surname }}"  
+      with_subelements:                                     
+        - family:
+            surname: Ryan
+            members:
+              - Aid
+              - Tan
+              - Gar
+              - Kay
+        - members                                       
+  #handlers
+...
+```
+
+* `with_subelements:` - This directive is used to iterate over a list of dictionaries and their subelements (nested lists).
+* The with_subelements takes two parameters:
+* The <b>first</b> is a list of dictionaries. In this case there is only 1 dict (family)
+* The <b>second</b> is the key within each dictionary to iterate over.
+
+#### Structure
+* The family dictionary contains a surname key and a members key.
+* members is a list of names.
+
+#### Iteration Process
+The `with_subelements` iterates over each element in the `family` dictionary and then over each element in the members list.
+
+#### Variables `item.0` and `item.1`
+* `item.0` refers to the parent element (in this case, each family dictionary).
+* `item.1` refers to the subelement (each member in the members list).
+
+#### Task Details
+name: "{{ item.1 }}":
+* `item.1` is each member name from the members list.
+
+comment: "{{ item.1 | title }} {{ item.0.surname }}":
+* `item.1 | title` converts the member name to title case.
+
+`item.0.surname` accesses the surname key from the family dictionary.
+
+#### Step-by-Step Execution
+##### First Iteration:
+`item.0` is the family dictionary.
+
+`item.1` is "Aid".
+
+* The task creates a user with:
+```
+name: "Aid"
+comment: "Aid Ryan"
+```
+
+##### Second Iteration:
+`item.1` is "Tan".
+The task creates a user with:
+
+```
+name: "Tan"
+comment: "Tan Ryan"
+```
+...
+
+In Python is looks like this:
+```
+family_dict = {
+    "family": {
+        "surname": "Ryan",
+        "members": ["Aid", "Tan", "Gar", "Kay"]
+    }
+}
+```
+
+##### Iteration Breakdown:
+* The with_subelements loops through each family dictionary and its members sublist.
+* For each member in members, Ansible uses `item.1` for the member name and `item.0.surname` for the surname.
+
+##### Summary
+* `with_subelements` is used to iterate through nested lists within dictionaries.
+* `item.0` refers to the outer dictionary.
+* `item.1` refers to the elements in the nested list.
+* For each member in members, a user is created with the member's name and a comment combining the member's name (in title case) and the surname.      
+
+### Using Loops to work with Keys:
+
+#### Example 1
+Here we use the `with_file` loop and the `authorized_keys` module to copy the current users public key to the authorized_keys file.
+
+```
+---
+# YAML documents begin with the document separator ---
+ 
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+ 
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+ 
+  # Tasks: the list of tasks that will be executed within the playbook
+  tasks:
+    - name: Create authorized key
+      authorized_key:
+        user: james
+        key: "{{ item }}"
+      with_file:
+        - /home/ansible/.ssh/id_rsa.pub
+
+
+# Three dots indicate the end of a YAML document
+...
+```
+
+#### Example 2
+We use `with_sequence` to create a list of directories with skip interval of 10.
+
+```
+---
+# YAML documents begin with the document separator ---
+ 
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+ 
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+ 
+  # Tasks: the list of tasks that will be executed within the playbook
+  tasks:
+    - name: Create sequence directories
+      file:
+        dest: "/home/james/sequence_{{ item }}"
+        state: directory
+      with_sequence: start=0 end=100 stride=10
+
+# Three dots indicate the end of a YAML document
+...
+```
+
+#### Example 3
+Same as above but resulting in decimal output. You can use hex(`%x`) or Octal too.
+
+```
+---
+# YAML documents begin with the document separator ---
+ 
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+ 
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+ 
+  # Tasks: the list of tasks that will be executed within the playbook
+  tasks:
+    - name: Create sequence directories
+      file:
+        dest: "{{ item }}"
+        state: directory
+      with_sequence: start=0 end=100 stride=10 format=/home/james/sequence_%d
+
+# Three dots indicate the end of a YAML document
+...
+```
+
+#### Example 4
+This uses `with_random_choice`to randomly select and item from the list.
+```
+---
+# YAML documents begin with the document separator ---
+ 
+# The minus in YAML this indicates a list item.  The playbook contains a list
+# of plays, with each play being a dictionary
+-
+ 
+  # Hosts: where our play will run and options it will run with
+  hosts: linux
+ 
+  # Tasks: the list of tasks that will be executed within the playbook
+  tasks:
+    - name: Create random directory
+      file:
+        dest: "/home/james/{{ item }}"
+        state: directory
+      with_random_choice:
+        - "google"
+        - "facebook"
+        - "microsoft"
+        - "apple"
+
+# Three dots indicate the end of a YAML document
+...
+```
+___
+#### Example 5
+This runs a script with an until condition. We register the result, and make it run max 100x with a delay of 100ms
+
+`until: result.stdout.find("10") != -1` 
+This specifies a condition to determine if the task should be retried. The task will keep running until the condition evaluates to True. In this case, it checks if the string "10" is found in the standard output (stdout) of the script. The find method returns the index of the first occurrence of the substring, or -1 if it is not found.
+
+For tasks that run commands or scripts, the registered variable typically has the following structure:
+
+* `result.stdout`: Standard output from the command or script.
+* `result.stderr`: Standard error from the command or script.
+* `result.rc`: Return code of the command or script.
+* `result.changed`: Boolean indicating if the task caused any change.
+* `result.failed`: Boolean indicating if the task failed.
+
+script:
+```
+#!/bin/bash
+echo $((1 + RANDOM % 10))
+```
+
+Playbook:
+```
+---
+-
+  hosts: ubuntu-c
+
+  tasks:
+    - name: Loop test
+      ansible.builtin.script: ./random.sh
+      register: result
+      until: result.stdout.find("10") != -1
+      retries: 100
+      delay: 0.1
+...
+```
+___
+## Perfomance
+### 
+* `Linear strategy`: Ansible will wait for a task to complete on all hosts before moving to the next task.
+
