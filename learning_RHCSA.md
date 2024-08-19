@@ -2047,7 +2047,6 @@ public (active)
 
 ### DROP outgoing traffic to a specific IP
 ```
-
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# ping 157.240.0.35
 PING 157.240.0.35 (157.240.0.35) 56(84) bytes of data.
 64 bytes from 157.240.0.35: icmp_seq=1 ttl=55 time=1.76 ms
@@ -2067,4 +2066,97 @@ PING 157.240.0.35 (157.240.0.35) 56(84) bytes of data.
 ```
 
 ## Containers (podman)
+While different software, it takes in all the same command structure
 
+* <b>podman</b> - managing pods and container images
+* <h>buildah</b> - building pushing and signing container images
+* <b>skopeo</b> - for copying inspecting deleteing and signing images
+* <b>rune</b> - for providing container run and build features to podman and buildah
+* <b>crun</b> - optional runtime that can be configured and gives flexibility, control and securtity for rootless containers.
+* <b>pods</b> - group of containers 
+
+### Install
+```
+[root@centos]# yum install podman -y
+[root@centos]# 
+
+```
+
+### See what registries exist
+```
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman info |less
+...
+registries:
+  search:
+  - registry.access.redhat.com
+  - registry.redhat.io
+  - docker.io
+...
+```
+
+### Find an image
+
+[root@centos]# podman search  --compatible httpd
+...
+docker.io/library/httpd                                                      The Apache HTTP Server Project                   4778        [OK]
+...
+
+
+### Download image
+```
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman pull docker.io/library/httpd
+Trying to pull docker.io/library/httpd:latest...
+Getting image source signatures
+Copying blob fd1a778092db done   |
+Copying blob e4fff0779e6d done   |
+Copying blob 1d0292c3dcd2 done   |
+Copying blob 4f4fb700ef54 done   |
+Copying blob 1316399d8fbf done   |
+Copying blob b4cc6570db82 done   |
+Copying config a49fd2c04c done   |
+Writing manifest to image destination
+a49fd2c04c0236f25b2724476ff48d73af6811f28e0db3765df6bb7f0f88bf7a
+
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman images
+REPOSITORY               TAG         IMAGE ID      CREATED      SIZE
+docker.io/library/httpd  latest      a49fd2c04c02  4 weeks ago  152 MB     <-downloaded
+```
+
+
+### Run container
+```
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman run -dt -p 8080:80/tcp docker.io/library/httpd
+5a9362761d68f6839af6330ae6049a106c6a3ac2c0e74334978e46aeec93ee12
+
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman ps -a
+CONTAINER ID  IMAGE                           COMMAND           CREATED        STATUS                      PORTS                         NAMES
+5a9362761d68  docker.io/library/httpd:latest  httpd-foreground  9 seconds ago  Exited (127) 8 seconds ago  0.0.0.0:8080->80/tcp, 80/tcp  kind_swanson
+
+```
+
+
+
+### Stop container
+```
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman ps -a
+CONTAINER ID  IMAGE                           COMMAND           CREATED        STATUS                           PORTS                         NAMES
+5a9362761d68  docker.io/library/httpd:latest  httpd-foreground  3 minutes ago  Exited (127) About a minute ago  0.0.0.0:8080->80/tcp, 80/tcp  kind_swanson
+
+[root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman stop 5a9362761d68
+5a9362761d68
+```
+
+### Create a new container from the downloaded image
+podman create --name "httpd2" docker.io/library/httpd2
+podman ps
+podman start https2
+
+
+### Manage containers using systemd
+* Generate a unit file.
+```
+podman generate systemd --new --files --name httpd
+cp /root/container-httpd.service /Etc/systemd/system
+systemctl enable container-httpd.service
+systemctl start container-httpd.service
+```
