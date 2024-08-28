@@ -65,9 +65,19 @@ eg: To Add a user
 eg: to change the users shell:
 `usermod -s /bin/zsh ironman`
 
+
+To add a user to a group :
+`usermod -a -G <group> <user>` this APPEND a group to the user
+
+To replace the groups of a user :
+`usermod -G <group> <user>` this will remove existing groups
+
+
 ### Password aging
 
 Default config : `/etc/login.defs`
+* if you change this file it will be active for any new logins created. 
+* Changes to aging and expiration will take affect when the user changes the passwd.
 ```
                               <---Snippet--->
 # Password aging controls:
@@ -219,17 +229,28 @@ System clock synchronized: yes
 Chronyd config is stored here :
  `/etc/chrony.conf`
 
+To add a source:
+```
+# Please consider joining the pool (https://www.pool.ntp.org/join.html).
+pool 2.centos.pool.ntp.org iburst
+pool 0.centos.pool.ntp.org iburst           <- add this
+```
+
 DON'T USE NTP AND CHRONYD. CHRONYD HAS SUPERCEEDED IT !
 
  you can check the chrony sync using `chronyc`
 ```
-chronyc> sources
+[root@centos2 etc]# chronyc sources
 MS Name/IP address         Stratum Poll Reach LastRx Last sample
 ===============================================================================
-^* 79.133.44.142                 1   9   377    84    +37us[  +55us] +/-  654us
-^- ntp1.kashra-server.com        2   7   377     7   +148us[ +148us] +/-   16ms
-^- ntp.fra1.de.leaseweb.net      2   8   377   139  +3018us[+3036us] +/-   91ms
-^- vps01.i87b.de                 2   9   377    18   +294us[ +294us] +/-   30ms
+^- mail2.light-speed.de          2   6    37    10   +425us[ +425us] +/-   14ms
+^* ntp01.pingless.com            2   6    37    11   +109us[  -38us] +/- 4033us
+^- 185.252.140.125               2   6    57     7   -556us[ -556us] +/-   13ms
+^- dc8wan.de                     2   6    37    11   -336us[ -336us] +/-   27ms
+^- srv02.spectre-net.de          2   6    37    11  +1576ns[+1576ns] +/- 6378us
+^- hc.gommels-bienen.de          2   6    37    10   +561us[ +561us] +/-   53ms
+^- static.81.54.251.148.cli>     2   6    37    11   +307us[ +160us] +/-   51ms
+^- de-fra2-ntp1.level66.net>     2   6    37    11  -1146us[-1293us] +/-   32ms
 ```
 
 
@@ -292,6 +313,8 @@ Usage Scenarios: Useful for users who prefer a semi-graphical interface or are w
 
 
 
+
+
 #### Important commands
 ##### ping
 
@@ -341,6 +364,32 @@ Settings for eth0:
 	Advertised pause frame use: No
 ```
 ___
+
+## Setting kernel parameters at runtime
+* We use `sysctl` for this, you can also add setting to a file called `/etc/sysctl.conf` and then run `sysctl -p ` to activate the setting at runtime. 
+* Here we will enable ip forwarding as an example:
+
+```
+sysctl -a                                       <- priovide all current settings
+
+[root@localhost ~]# sysctl -a | grep -i net.ipv4.ip_forward
+net.ipv4.ip_forward = 0
+net.ipv4.ip_forward_update_priority = 1
+net.ipv4.ip_forward_use_pmtu = 0
+
+[root@localhost ~]# vi /etc/sysctl.conf
+       net.ipv4.ip_forward = 1
+
+[root@localhost ~]# sysctl -p                    <---- to activate
+net.ipv4.ip_forward = 1
+
+[root@localhost ~]# sysctl -a | grep -i net.ipv4.ip_forward
+net.ipv4.ip_forward = 1                          <----- now active
+net.ipv4.ip_forward_update_priority = 1
+net.ipv4.ip_forward_use_pmtu = 0
+
+```
+
 ## FTP (vsftpd - server proc)
 
 ### Server installation
@@ -525,24 +574,53 @@ Updates vs Upgrades:
 
 
 ### Make a local repo
-copy the repo souce to `/root/localrepo` for example
+* In this example we will download an ISO DVD to mimic a DVD image on the system.
+* NOTE: DVD ISO's are always read-onlyl.
+* IMPORTANT: `../repodata/repomd.xml` needs to exist on the ISO image once mounted. If it is readonly, you need to copy it and mount it, then run `createrepo`
+
 ```
-yum install createrepo_c
-vi /etc/yum.repos.d/local.repo  <-create this file
+mkdir /dvd_iso
+cd /dvd_iso
+wget https://mirror.stream.centos.org/9-stream/BaseOS/x86_64/iso/CentOS-Stream-9-20240819.0-x86_64-dvd1.iso
+
+mkdir /iso /iso_rw
+
+mount -o loop,ro /dvd_iso/CentOS-Stream-9-20240819.0-x86_64-dvd1.iso  /mnt/iso
+
+vi /etc/fstab
+-------
+/dvd_iso/CentOS-Stream-9-20240819.0-x86_64-dvd1.iso /mnt/iso  iso9660 loop,ro 0 0
+-------
+
+cp -r  /mnt/iso/* /mnt/iso_rw/
+
+yum install createrepo_c -y
+
+[root@centos1 mnt]# createrepo_c /mnt/iso_rw
+  Directory walk started
+  Directory walk done - 7056 packages
+  Temporary output repo path: /mnt/iso_rw/.repodata/
+  Preparing sqlite DBs
+  Pool started (with 5 workers)
+  Pool finished
+```
+
+
+* Create a local repo
+```
+vi /etc/yum.repos.d/centos-local.repo  <-create this file
 ________ 
-[zshRepo]
-name=zshRepo
-baseurl=file:///root/localrepo/
-enabled=1
+[centos-local]
+name=Centos 9 local ISO
+baseurl=file:///mnt/iso_rw
 gpgcheck=0
+enabled=1
 _________
 
-createrepo /root/local_repo/
 yum clean all
 yum repolist all
+yum makecache
 
-# test
-yum install zsh
 ```
 
 ## Server Dump and support
@@ -923,6 +1001,9 @@ Syncing disks.
 
 
 ```
+
+# ! NOTE: YOU ONLY USE PVCREATE WHEN WANTING TO USE LVM
+
 
 #### 3) format the Filesystem
 ```
@@ -1355,7 +1436,7 @@ Syncing disks.
 
 #### 4) Extend the logical Volum(LV)
 ```
-[root@centos2 ~]# lvextend -L+2GB /dev/mapper/data_vg-data_lv
+[root@centos2 ~]# lvextend -L +2GB /dev/mapper/data_vg-data_lv
   Size of logical volume data_vg/data_lv changed from 1000.00 MiB (250 extents) to <2.98 GiB (762 extents).
   Logical volume data_vg/data_lv successfully resized.
 
@@ -1378,8 +1459,12 @@ Syncing disks.
   Block device           253:0
 
 ```
+IMPORTANT:
 
-#### 5) Extend the Filesystem
+* Use `resize2fs` for ext2/ext3/ext4 filesystems.
+* Use `xfs_growfs` for expanding XFS filesystems.
+
+#### 5) Extend the Filesystem if XFS
 ```
 [root@centos2 data]# xfs_growfs /dev/mapper/data_vg-data_lv
 meta-data=/dev/mapper/data_vg-data_lv isize=512    agcount=4, agsize=64000 blks
@@ -1403,6 +1488,66 @@ tmpfs                         93M  2.4M   90M   3% /run
 tmpfs                         47M     0   47M   0% /run/user/0
 /dev/mapper/data_vg-data_lv  3.0G  951M  2.0G  32% /data
 ```
+
+#### 6) Extend the Filesystem if EXT4
+```
+[root@centos1 data]# resize2fs /dev/mapper/data_vg-data_lv
+resize2fs 1.46.5 (30-Dec-2021)
+Filesystem at /dev/mapper/data_vg-data_lv is mounted on /newlv; on-line resizing required
+old_desc_blocks = 4, new_desc_blocks = 7
+The filesystem on /dev/mapper/data_vg-data_lv is now 819200 (1k) blocks long.
+
+[root@centos1 newlv]# df -h
+Filesystem               Size  Used Avail Use% Mounted on
+devtmpfs                 4.0M     0  4.0M   0% /dev
+tmpfs                    386M     0  386M   0% /dev/shm
+tmpfs                    155M  3.1M  152M   2% /run
+/dev/vda1                 25G   23G  2.3G  92% /
+tmpfs                     78M     0   78M   0% /run/user/0
+/dev/mapper/newvg-newlv  740M   14K  700M   1% /newlv
+```
+
+
+## Create a 1GB thin-provisioned volume
+
+### Create a thin pool named mypool with 2 GB
+`lvcreate -L 2G --thinpool mypool data-vg`
+
+### Create a thin-provisioned volume named log with 1 GB virtual size
+`lvcreate -V 1G --thin -n log /dev/data-vg/mypool`
+
+### Format the thin volume
+`mkfs.ext4 /dev/data-vg/log`
+
+### Mount the thin volume
+`mkdir /log`
+
+`mount /dev/data-vg/log /log`
+___
+## Extending the thin-provisioned volume
+```
+lvextend -L 1.5G /dev/data-vg/log
+resize2fs /dev/data-vg/log
+```
+___
+### Summary
+
+* The <b>thin pool LV (mypool)</b>> manages the actual physical storage available to all the thin-provisioned volumes within it. If you extend the thin pool (i.e., allocate more physical space to mypool), the thin volumes inside it can grow or accommodate more data.
+* The <b>thin-provisioned LV (log)</b> is a virtual LV that resides inside the thin pool. When you write data to log, the thin pool allocates the necessary blocks from its data area. The thin pool's metadata tracks which blocks belong to which thin volumes.
+
+```
++--------------------+
+| Thin Pool (mypool) |   <- This is the physical storage managed by LVM.
+|    2 GB total      |
+|                    |
+| +---------------+  |
+| | Thin Volume   |  |   <- This is a virtual LV inside the thin pool.
+| | (log, 1.5 GB) |  |   <- Resides inside the thin pool and consumes space as data is written.
+| +---------------+  |
+|                    |
++--------------------+
+```
+___
 
 ##  Stratis (advanced storage management)
 
@@ -1764,6 +1909,15 @@ Created symlink /etc/systemd/system/default.target → /usr/lib/systemd/system/m
 multi-user.target
 ```
 ___
+### Enable grub to log in debug
+```
+vi /etc/default/grub
+  GRUB_CMDLINE_LINUX="... debug"
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+init 6
+```
+
 ## Recover Root Password
 
 * go to the console and reboot the server
@@ -2160,3 +2314,191 @@ cp /root/container-httpd.service /Etc/systemd/system
 systemctl enable container-httpd.service
 systemctl start container-httpd.service
 ```
+
+
+
+___
+___
+___
+___
+___
+___
+
+# What I still need to learn
+## Create swap 
+* `fdisk -l`
+* `fdisk </dev/sdx>`
+* `mkswap /dev/sdx1`
+* `swapon /dev/sdx1`
+* `vi /etc/fstab`
+* * /dev/sdx1 swap swap defaults 0 0
+* `swapon -s`  or `free -m`
+
+
+## Turn on SELinux policy container_manage_cgroup with persistance
+```
+ getsebool -a|grep -i container_mana
+ setsebool -P container_manage_cgroup 1
+ getsebool -a|grep -i container_mana
+```
+
+
+
+## How to put grub into debug
+```
+vi /etc/default/grub
+   GRUB_CMDLINE_LINUX="rd.udevc.log_priority=debug console=ttyS0,115200n8 no_timer_check net.ifnames=0 crashkernel=1G-4G:192M,4G-64G:256M,64G-:512M"
+grub2-mkconfig -o /boot/grub2/grub.cfg
+```
+___
+## 2 Methods to change the root password when you dont know it.
+### How to replace root pwd the new way
+* Boot into console (press up|down until you can hit `e` to access the grub menu)
+* find the ^linux line `ctrl e` and add `init=/bin/bash console=tty0` to the end and hit `crtl x`
+* Check current mount `cat /proc/mounts | grep " / " `
+* mount the root fs: `mount -o remount,rw /`
+* Check current mount `cat /proc/mounts | grep " / " ` ---> it is `rw` now
+* Check selinux context for /etc/shadow with `ls -lZ /etc/shadow` ---> take note of context
+* change pwd `passwd root`
+* SET selinux context for /etc/shadow with `chcon system_u:object_r:shadow_t:s0 /etc/shadow`
+* boot with `exec /sbin/init`
+
+### How to replace root pwd with rd.break
+* Boot into console (press up|down until you can hit `e` to access the grub menu)
+* find the ^linux line `ctrl e` and add `rd.break console=tty0` to the end and hit `crtl x`
+* remount the root fs: `mount -o remount,rw /sysroot`
+* start shell in sysroot with `chroot sysroot`
+* `passwd root` to change the password
+* `touch /.autorelabel` so SELinux will relabel
+* `exit` and `mount -o remount,ro /sysroot`
+
+___
+
+
+## convert epoch to real date time
+```
+[root@centos1 audit]# date -d @1724662763.803
+Mon Aug 26 08:59:23 AM UTC 2024
+```
+
+## ausearch | aureport
+* When using this you need to use this date format:  Month/Day/Year -> because america is the world
+```
+[root@centos1 audit]# ausearch -ts 08/26/2024 '09:00:10' -te 08/26/2024 '09:00:20'
+time->Mon Aug 26 09:00:17 2024
+type=CRED_ACQ msg=audit(1724662817.699:94): pid=4024 uid=0 auid=4294967295 ses=4294967295 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=PAM:setcred grantors=pam_env,pam_localuser,pam_unix acct="root" exe="/usr/sbin/sshd" hostname=188.154.47.102 addr=188.154.47.102 terminal=ssh res=success'
+----
+time->Mon Aug 26 09:00:17 2024
+type=LOGIN msg=audit(1724662817.700:95): pid=4024 uid=0 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 old-auid=4294967295 auid=0 tty=(none) old-ses=4294967295 ses=1 res=1
+----
+time->Mon Aug 26 09:00:17 2024
+type=PROCTITLE msg=audit(1724662817.700:95): proctitle=737368643A20726F6F74205B707269765D
+type=SYSCALL msg=audit(1724662817.700:95): arch=c000003e syscall=1 success=yes exit=1 a0=3 a1=7ffd65e74580 a2=1 a3=0 items=0 ppid=1292 pid=4024 auid=0 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=1 comm="sshd" exe="/usr/sbin/sshd" subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 key=(null)
+----
+time->Mon Aug 26 09:00:17 2024
+type=USER_ROLE_CHANGE msg=audit(1724662817.704:96): pid=4024 uid=0 auid=0 ses=1 subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='pam: default-context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 selected-context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023 exe="/usr/sbin/sshd" hostname=188.154.47.102 addr=188.154.47.102 terminal=ssh res=success'
+...
+```
+
+#### You can search for a particular event number(95) taken from above extract 
+* and `--interpret` makes it human readable (translates users, groups, hexes[arch] and timestamps etc.)
+
+```
+[root@centos1 audit]# ausearch --event 95 --interpret
+----
+type=LOGIN msg=audit(08/26/2024 09:00:17.700:95) : pid=4024 uid=root subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 old-auid=unset auid=root tty=(none) old-ses=4294967295 ses=1 res=yes
+----
+type=PROCTITLE msg=audit(08/26/2024 09:00:17.700:95) : proctitle=sshd: root [priv]
+type=SYSCALL msg=audit(08/26/2024 09:00:17.700:95) : arch=x86_64 syscall=write success=yes exit=1 a0=0x3 a1=0x7ffd65e74580 a2=0x1 a3=0x0 items=0 ppid=1292 pid=4024 auid=root uid=root gid=root euid=root suid=root fsuid=root egid=root sgid=root fsgid=root tty=(none) ses=1 comm=sshd exe=/usr/sbin/sshd subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 key=(null)
+----
+type=CRYPTO_KEY_USER msg=audit(08/26/2024 09:14:50.513:95) : pid=3991 uid=root auid=unset ses=unset subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=SHA256:08:42:b5:ad:ef:ae:6a:57:8a:d0:46:fa:6d:69:7f:33:ab:0f:d1:9c:03:62:f3:ba:ad:a7:ea:d3:56:fd:3d:73 direction=? spid=3991 suid=root  exe=/usr/sbin/sshd hostname=? addr=? terminal=? res=success'
+----
+type=CRYPTO_KEY_USER msg=audit(08/26/2024 13:57:16.220:95) : pid=1389 uid=root auid=unset ses=unset subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=SHA256:08:42:b5:ad:ef:ae:6a:57:8a:d0:46:fa:6d:69:7f:33:ab:0f:d1:9c:03:62:f3:ba:ad:a7:ea:d3:56:fd:3d:73 direction=? spid=1389 suid=root  exe=/usr/sbin/sshd hostname=? addr=? terminal=? res=success'
+```
+
+#### aureport with a full day windows to get a summary of the day
+```
+[root@centos1 audit]# aureport -ts 08/26/2024 '00:00:00' -te 08/26/2024 '23:59:59'
+
+Summary Report
+======================
+Range of time in logs: 08/27/2024 00:00:00.577 - 08/26/2024 23:59:58.899
+Selected time for report: 08/26/2024 00:00:00 - 08/26/2024 23:59:59
+Number of changes in configuration: 64
+Number of changes to accounts, groups, or roles: 0
+Number of logins: 3
+Number of failed logins: 1362
+Number of authentications: 3
+Number of failed authentications: 5
+Number of users: 2
+Number of terminals: 6
+Number of host names: 102
+Number of executables: 11
+Number of commands: 12
+Number of files: 1
+Number of AVC's: 1
+Number of MAC events: 13
+Number of failed syscalls: 1
+Number of anomaly events: 4
+Number of responses to anomaly events: 0
+Number of crypto events: 8253
+Number of integrity events: 0
+Number of virt events: 0
+Number of keys: 0
+Number of process IDs: 2785
+Number of events: 11559
+```
+
+#### identify all audit events where any SELinux denials and unauthorized access attempts occured
+
+* The AVC in SELinux is a performance-enhancing component that caches access control decisions, reducing the need to re-evaluate policies for repeated access requests. It is also an important part of SELinux logging, helping administrators understand and troubleshoot access denials. see (ausearch)
+```
+[root@centos1 ~]# sudo ausearch -m avc -ts recent
+<no matches>
+
+[root@centos1 ~]# sudo ausearch -m avc
+----
+time->Tue Aug 27 00:00:01 2024
+type=PROCTITLE msg=audit(1724716801.929:8313): proctitle=2F7573722F7362696E2F6C6F67726F74617465002F6574632F6C6F67726F746174652E636F6E66
+type=SYSCALL msg=audit(1724716801.929:8313): arch=c000003e syscall=262 success=no exit=-13 a0=ffffff9c a1=5566afc40460 a2=7ffc647ac330 a3=100 items=0 ppid=1 pid=4145 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=4294967295 comm="logrotate" exe="/usr/sbin/logrotate" subj=system_u:system_r:logrotate_t:s0 key=(null)
+type=AVC msg=audit(1724716801.929:8313): avc:  denied  { getattr } for  pid=4145 comm="logrotate" path="/var/log/hawkey.log" dev="vda1" ino=12912088 scontext=system_u:system_r:logrotate_t:s0 tcontext=system_u:object_r:unlabeled_t:s0 tclass=file permissive=0
+```
+
+## Activating a service in firewalld
+```
+[root@centos1 tmp]# firewall-cmd  --get-services
+* * * * ssh * * * * <long list>
+
+[root@centos1 tmp]# firewall-cmd --list-service --zone=public
+cockpit dhcpv6-client
+
+[root@centos1 tmp]# firewall-cmd --permanent --zone=public --add-service=ssh
+success
+
+[root@centos1 tmp]# firewall-cmd --reload
+success
+
+[root@centos1 tmp]# firewall-cmd --list-service --zone=public
+cockpit dhcpv6-client ssh
+```
+
+## Change Keyboard to swiss german
+```
+[root@localhost ~]# localectl status
+System Locale: LANG=en_GB.UTF-8
+    VC Keymap: gb
+   X11 Layout: gb
+
+[root@localhost ~]# vi /etc/vconsole.conf
+    KEYMAP="ch-de_mac"
+
+[root@localhost ~]# reboot
+```
+
+# Revision of things i dont know so well
+|section                                 |comments                                      |
+|----------------------------------------|----------------------------------------------|
+|[nmcli ](#nmcli)                        | I forget to set method and to perform reload |
+|[Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
+
+
