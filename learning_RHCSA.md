@@ -1459,12 +1459,12 @@ Syncing disks.
   Block device           253:0
 
 ```
-IMPORTANT:
 
-* Use `resize2fs` for ext2/ext3/ext4 filesystems.
-* Use `xfs_growfs` for expanding XFS filesystems.
 
 #### 5) Extend the Filesystem if XFS
+IMPORTANT:
+* Use `resize2fs` for ext2/ext3/ext4 filesystems.
+* Use `xfs_growfs` for expanding XFS filesystems.
 ```
 [root@centos2 data]# xfs_growfs /dev/mapper/data_vg-data_lv
 meta-data=/dev/mapper/data_vg-data_lv isize=512    agcount=4, agsize=64000 blks
@@ -1635,8 +1635,8 @@ pool1   datastorefs-snap   1 TiB / 546 MiB / 1023.47 GiB / None   Aug 19 2024 06
 
 ```
 # Stratis FS
-UUID=9cfb0211-4258-41be-9843-008ecdaf7555 /bigdata      xfs defaults,x-systemd.requires=stratisd.service   0 0
-UUID=f8f45b16-9f00-46ec-9b35-bf162160ad23 /bigdataSnap  xfs defaults,x-systemd.requires=stratisd.service   0 0
+UUID=9cfb0211-4258-41be-9843-008ecdaf7555 /bigdata      xfs defaults,x-systemd.requires=stratisd.service   0 2
+UUID=f8f45b16-9f00-46ec-9b35-bf162160ad23 /bigdataSnap  xfs defaults,x-systemd.requires=stratisd.service   0 2
 ```
 
 ___
@@ -2331,7 +2331,8 @@ ___
 * `mkswap /dev/sdx1`
 * `swapon /dev/sdx1`
 * `vi /etc/fstab`
-* * /dev/sdx1 swap swap defaults 0 0
+* * /dev/sdx1 swap swap defaults 0 2
+* * NOTE: the `2` at the end of the above line is says at boot it should run fschk
 * `swapon -s`  or `free -m`
 
 
@@ -2495,10 +2496,47 @@ System Locale: LANG=en_GB.UTF-8
 [root@localhost ~]# reboot
 ```
 
+## Sctipting notes
+* With Scripting, make sure that when comparing string that both string and var are quoted ! `" "`
+```
+#!/bin/bash
+
+if [ "$1" == "yes" ]
+then
+  echo "That's nice"
+elif [ "$1" == "no" ]
+then
+  echo "I am sorry to hear that"
+else
+  echo "unknown argument provided"
+fi
+```
+
+* to do the same with case statements:
+```
+#!/bin/bash
+
+case "$1" in
+  yes)
+    echo "That's nice"
+    ;;
+  no)
+    echo "I am sorry to hear that"
+    ;;
+  *)
+    echo "unknown argument provided"
+    ;;
+esac
+```
+
+
 # Revision of things i dont know so well
 |section                                 |comments                                      |
 |----------------------------------------|----------------------------------------------|
 |[nmcli ](#nmcli)                        | I forget to set method and to perform reload |
 |[Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
+|[extend ext4 FS](#6-extend-the-filesystem-if-ext4) | I forget the command `resize2fs` |
+|[comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings|
+
 
 
