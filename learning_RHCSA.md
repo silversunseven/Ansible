@@ -124,6 +124,22 @@ CMDLINE: `chage -d <lastday> -m <mindays> -M <maxdays> -W <warndays> -I -E <expi
 eg: `chage -m 5 -M 90 -W 10 -I 3 -E 30 bababutt` results in :
 ironman:$6$Sa3CEa7va56INP3Q$zC4sGsgJAn0RjeYfD4Yh5STzc7CSV6oRez3jgb0tvkygUGxa3R.lNgnQvDF/K5W8bQZZUUjWjdDBt4RcOOx2l0:19949:`5`:`90`:`10`:`3`:`30`:
 
+### Password quality
+```
+[root@rhel security]# cat /etc/security/pwquality.conf
+# Configuration for systemwide password quality limits
+# Defaults:
+                         <---Snippet--->
+# Minimum acceptable size for the new password (plus one if
+# credits are not disabled which is the default). (See pam_cracklib manual.)
+# Cannot be set to lower value than 6.
+minlen = 9
+                          <---Snippet--->
+# The maximum number of allowed consecutive same characters in the new password.
+# The check is disabled if the value is 0.
+# maxrepeat = 0
+```
+
 ### Sudo 
 to add a user to get access to run root commands add the user to group `wheel` :
 
@@ -387,6 +403,14 @@ net.ipv4.ip_forward = 1
 net.ipv4.ip_forward = 1                          <----- now active
 net.ipv4.ip_forward_update_priority = 1
 net.ipv4.ip_forward_use_pmtu = 0
+
+```
+## Install Kernel updates
+* The command updates the Kernel and Grub by default will boot the latest kernel version. 
+* Previous kernels are NOT removed
+
+```
+yum update kernel
 
 ```
 
@@ -2465,6 +2489,32 @@ type=SYSCALL msg=audit(1724716801.929:8313): arch=c000003e syscall=262 success=n
 type=AVC msg=audit(1724716801.929:8313): avc:  denied  { getattr } for  pid=4145 comm="logrotate" path="/var/log/hawkey.log" dev="vda1" ino=12912088 scontext=system_u:system_r:logrotate_t:s0 tcontext=system_u:object_r:unlabeled_t:s0 tclass=file permissive=0
 ```
 
+
+## Adding files to all users created
+```
+[root@rhel ~]# cat /etc/default/useradd
+# useradd defaults file
+GROUP=100
+HOME=/home
+INACTIVE=-1
+EXPIRE=
+SHELL=/bin/bash
+SKEL=/etc/skel
+CREATE_MAIL_SPOOL=yes
+
+[root@rhel ~]# cd /etc/skel/
+
+[root@rhel skel]# touch YouDaWinna
+
+[root@rhel skel]# useradd aryan
+
+[root@rhel skel]# su - aryan
+
+[aryan@rhel ~]$ ls -ltr
+total 0
+-rw-r--r--. 1 aryan aryan 0 Aug 28 15:22 YouDaWinna
+```
+
 ## Activating a service in firewalld
 ```
 [root@centos1 tmp]# firewall-cmd  --get-services
@@ -2533,10 +2583,13 @@ esac
 # Revision of things i dont know so well
 |section                                 |comments                                      |
 |----------------------------------------|----------------------------------------------|
-|[nmcli ](#nmcli)                        | I forget to set method and to perform reload |
-|[Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
-|[extend ext4 FS](#6-extend-the-filesystem-if-ext4) | I forget the command `resize2fs` |
-|[comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings|
+| [nmcli ](#nmcli)                       | I forget to set method and to perform reload |
+| [Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
+| [extend ext4 FS](#6-extend-the-filesystem-if-ext4) | I forget the command `resize2fs` |
+| [comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings |
+| [Change default Target](#change-default-target) | just needed a refresher. |
+| [Update kernel](#install-kernel-updates)  | new to me |
+| [Pwquality and ageing](#password-aging) | note which file has what |
 
 
 
