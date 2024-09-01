@@ -1669,53 +1669,30 @@ ___
 
 ### Server Side setup and config
 ```
-yum install nfs-utils libnfsidmap
-systemctl enable rpcbind
-systemctl enable nfs-server
-
-systemctl start rpcbind
-systemctl start rpc-statd
-systemctl start nfs-server
-systemctl start nfs-idmapd
-
-mkdir /deltaforce
-chmod 777 /deltaforce
-
+yum install nfs-utils -y
 vi /etc/exports
-...
-#share      allowIP     #Perm,sync write,root on client=root on server   
-/deltaforce 192.168.12.7(rw,sync,no_root_squash)       <- IMPORTANT : NO SPACES
-...
+   /exfs        *(rw)
 
-exportfs -rv
+exportfs -ra
+
+systemctl enable nfs-server.service
+systemctl start nfs-server.service
+
+sudo firewall-cmd --permanent --add-service=nfs
+sudo firewall-cmd --reload
 ```
 
 
 ### Client side connection
 
 ```
-[root@centos1 ~]# yum install nfs-utils rpcbind
-Last metadata expiration check: 0:00:24 ago on Mon 19 Aug 2024 07:29:58 AM UTC.
-Package nfs-utils-1:2.5.4-26.el9.x86_64 is already installed.
-Package rpcbind-1.2.6-7.el9.x86_64 is already installed.
-Dependencies resolved.
-Nothing to do.
-Complete!
+yum install nfs-utils -y
+vi /etc/fstab
+10.0.0.63:/exfs                 /mymount                nfs     defaults        0 0
 
-[root@centos1 ~]# systemctl start rpcbind
-
-[root@centos1 ~]# mkdir /mnt/app
-
-[root@centos1 ~]# mount centos2:/deltaforce /mnt/app
-
-[root@centos1 ~]# ls -lrt /mnt/app
-total 0
--rw-r--r--. 1 root root 0 Aug 19 07:33 server.file
-
-[root@centos1 ~]# df -k
-Filesystem                 1K-blocks    Used Available Use% Mounted on
-...
-centos2:/deltaforce         10417152 1318272   9098880  13% /mnt/app
+mkdir /mymount
+systemctl daemon-reload
+mount -a
 ```
 ___
 
@@ -2579,6 +2556,20 @@ case "$1" in
 esac
 ```
 
+* Cool command to find emtpy files and directories:
+```
+[root@localhost tmp]# find /tmp -type d -empty -delete
+[root@localhost tmp]# find /tmp -type f -empty -delete
+```
+
+## tar using bzip and then extract the data to dir /restore
+```
+tar cvfpj /backup/newetc.tar.bz2 /etc
+
+tar xvfj  /backup/newetc.tar.bz2 -C /restore
+
+```
+
 
 # Revision of things i dont know so well
 |section                                 |comments                                      |
@@ -2586,10 +2577,14 @@ esac
 | [nmcli ](#nmcli)                       | I forget to set method and to perform reload |
 | [Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
 | [extend ext4 FS](#6-extend-the-filesystem-if-ext4) | I forget the command `resize2fs` |
-| [comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings |
+| [comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings, know the -empty and -delete cmds for find |
 | [Change default Target](#change-default-target) | just needed a refresher. |
 | [Update kernel](#install-kernel-updates)  | new to me |
 | [Pwquality and ageing](#password-aging) | note which file has what |
+| [Tar bz2 capabilities](#tar-using-bzip-and-then-extract-the-data-to-dir-restore)|new to me|
+| [NFS](#nfs-network-file-system)|totally forgot how to do this|
+
+
 
 
 
