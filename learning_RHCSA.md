@@ -406,6 +406,7 @@ net.ipv4.ip_forward_use_pmtu = 0
 
 ```
 ## Install Kernel updates
+* `kernel`is with an `el` not `al`
 * The command updates the Kernel and Grub by default will boot the latest kernel version. 
 * Previous kernels are NOT removed
 
@@ -1659,6 +1660,7 @@ pool1   datastorefs-snap   1 TiB / 546 MiB / 1023.47 GiB / None   Aug 19 2024 06
 
 ```
 # Stratis FS
+* NOTE: the `2` at the end of the above line is says at boot it should run fschk
 UUID=9cfb0211-4258-41be-9843-008ecdaf7555 /bigdata      xfs defaults,x-systemd.requires=stratisd.service   0 2
 UUID=f8f45b16-9f00-46ec-9b35-bf162160ad23 /bigdataSnap  xfs defaults,x-systemd.requires=stratisd.service   0 2
 ```
@@ -1671,7 +1673,9 @@ ___
 ```
 yum install nfs-utils -y
 vi /etc/exports
-   /exfs        *(rw)
+
+#directory  SrcServers(permissions)
+/exfs       *(rw,sync,no_subtree_check)
 
 exportfs -ra
 
@@ -1681,7 +1685,11 @@ systemctl start nfs-server.service
 sudo firewall-cmd --permanent --add-service=nfs
 sudo firewall-cmd --reload
 ```
-
+|Options|Meaning|
+|-|-|
+|rw| Read/write access.|
+|sync| Writes are committed to disk before the request is completed.|
+|no_subtree_check| Prevents subtree checking, which can improve performance.|
 
 ### Client side connection
 
@@ -2250,11 +2258,12 @@ registries:
 ```
 
 ### Find an image
-
+```
 [root@centos]# podman search  --compatible httpd
-...
+----extract----
 docker.io/library/httpd                                                      The Apache HTTP Server Project                   4778        [OK]
-...
+----extract----
+```
 
 
 ### Download image
@@ -2315,14 +2324,80 @@ cp /root/container-httpd.service /Etc/systemd/system
 systemctl enable container-httpd.service
 systemctl start container-httpd.service
 ```
+___
+### Setup a local repository
+When mounting a volume in podman with `-v` *NOTE* the `:z` at the end;
+* When you use :z, SELinux relabels the files in such a way that both the host system and the container can access them correctly, maintaining proper security contexts.
+
+```
+yum install podman -y
+
+mkdir -p /var/lib/registry
+
+podman run -d \
+  -p 5000:5000 \
+  --name reggy \
+  -v /var/lib/registry:/var/lib/registry:z \
+  docker.io/library/registry
+
+vi /etc/containers/registry.conf
+___file___
+  [[registry]]
+  location = "localhost:5000"
+  insecure = true
+___file___
+
+podman ps -a
+
+podman tag alpine localhost:5000/alpine
+podman push localhost:5000/alpine
+
+podman pull localhost:5000/alpine
+
+podman generate systemd --name reggy --new --files
+cp container-reggy.service /etc/systemd/system/
+
+systemctl enable container-reggy.service
+systemctl start container-local-registry.service
+```
+
+### Custom container
+
+* Search and pull Alpine image
+
+      podman pull alpine
+
+* Run Alpine container with long-running process
+
+      podman run -d alpine sleep 3600
+
+* Verify container is running
+
+      podman ps
+
+* Create custom container with nginx
+```
+    podman run -it alpine sh
+    apk update
+    apk add nginx
+    exit
+```
+
+* Commit new image
+
+      podman commit <container_id> nginx_custom:latest
+
+* Run the custom nginx container
+
+      podman run -d -p 8080:80 nginx_custom:latest
+
+* Verify nginx is running
+
+      curl http://localhost:8080
 
 
+___
 
-___
-___
-___
-___
-___
 ___
 
 # What I still need to learn
@@ -2332,8 +2407,8 @@ ___
 * `mkswap /dev/sdx1`
 * `swapon /dev/sdx1`
 * `vi /etc/fstab`
-* * /dev/sdx1 swap swap defaults 0 2
-* * NOTE: the `2` at the end of the above line is says at boot it should run fschk
+* * /dev/sdx1 swap swap defaults 0 0
+* * NOTE: the `0` at the end of the above line means at boot it should NOT run fschk. Not needed because Swap is not a traditional filesystem and the operating system handles their integrity in a different manner compared to regular filesystems.
 * `swapon -s`  or `free -m`
 
 
@@ -2570,6 +2645,122 @@ tar xvfj  /backup/newetc.tar.bz2 -C /restore
 
 ```
 
+## Set Linux to boot of index 1 in the boot menu
+```
+
+[root@test2 ~]# grubby --info=ALL
+index=0
+kernel="/boot/vmlinuz-5.14.0-427.33.1.el9_4.aarch64"
+args="ro crashkernel=1G-4G:256M,4G-64G:320M,64G-:576M rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap"
+root="/dev/mapper/rhel-root"
+initrd="/boot/initramfs-5.14.0-427.33.1.el9_4.aarch64.img $tuned_initrd"
+title="Red Hat Enterprise Linux (5.14.0-427.33.1.el9_4.aarch64) 9.4 (Plow)"
+id="bdbcb356d2574e5b835bd5d17bcd1f0d-5.14.0-427.33.1.el9_4.aarch64"
+index=1
+kernel="/boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d"
+args="ro crashkernel=1G-4G:256M,4G-64G:320M,64G-:576M rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap"
+root="/dev/mapper/rhel-root"
+initrd="/boot/initramfs-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d.img"
+title="Red Hat Enterprise Linux (0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d) 9.4 (Plow)"
+id="bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue"
+
+[root@test2 ~]# grubby --set-default-index=1
+The default is /boot/loader/entries/bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue.conf with index 1 and kernel /boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d
+
+[root@test2 ~]# grubby --default-kernel
+/boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d
+
+[root@test2 ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
+Generating grub configuration file ...
+Adding boot menu entry for UEFI Firmware Settings ...
+done
+
+[root@test2 ~]# reboot
+
+```
+
+## Prohibit root login over ssh
+```
+vi /etc/ssh/sshd_config
+PermitRootLogin yes
+systemctl restart sshd
+```
+
+## Troubleshooting systemd
+* Make sure the service file has `664` permission :
+
+      chmod 644 /etc/systemd/system/container-reggy.service
+
+* Look for Errors:
+
+      journalctl -u container-reggy.service
+
+* Make sure that systemd recognizes the unit file
+
+      systemctl list-unit-files | grep container-reggy
+
+* Perform an analysis on the unit file:
+
+      systemd-analyze verify /etc/systemd/system/container-reggy.service
+
+* Check SELinux Context, if missing, restore it:
+```
+   ls -Z /etc/systemd/system/container-reggy.service
+   restorecon -v /etc/systemd/system/container-reggy.service
+```
+
+* Make sure to do a `systemctl daemon-reload` after any changes and check the status with:
+`systemctl list-unit-files | grep container-reggy`
+
+## Setup Centralized logging
+### Log Server
+
+* Enable TCP 
+```
+vi /etc/rsyslog.conf
+   module(load="imtcp") 
+   input(type="imtcp" port="514")
+```
+
+* Open FW
+```
+firewall-cmd --permanent --add-port=514/tcp
+firewall-cmd --reload
+```
+* Restart and enable rsyslog
+```
+systemctl restart rsyslog
+systemctl enable rsyslog
+```
+
+
+
+
+### Sender Server
+* Add to /etc/rsyslog.conf
+```
+module(load="imtcp") 
+input(type="imtcp" port="514")
+...
+*.* @@10.0.0.73:514
+```
+
+* Open FW
+```
+firewall-cmd --permanent --add-port=514/tcp
+firewall-cmd --reload
+```
+
+* Restart
+```
+systemctl restart rsyslog
+systemctl enable rsyslog
+```
+
+### Tail to see if you see the log entries on the log Server
+```
+tail -f /var/log/messages
+```
 
 # Revision of things i dont know so well
 |section                                 |comments                                      |
@@ -2583,7 +2774,12 @@ tar xvfj  /backup/newetc.tar.bz2 -C /restore
 | [Pwquality and ageing](#password-aging) | note which file has what |
 | [Tar bz2 capabilities](#tar-using-bzip-and-then-extract-the-data-to-dir-restore)|new to me|
 | [NFS](#nfs-network-file-system)|totally forgot how to do this|
-
+| [Change boot index](#set-linux-to-boot-of-index-1-in-the-boot-menu)|new to me|
+| [Create swap](#create-swap)|forgot about the mount details, and how to check with `swapon -s`|
+| [Prohibit root login over ssh](#prohibit-root-login-over-ssh)|good reminder|
+| [Create a systemd service](#???)|to be done|
+| [Podman stuff](#containers-podman) | go over it multiple times |
+| [Centralized logging](#setup-centralized-logging)|new to me|
 
 
 
