@@ -45,7 +45,17 @@ example to redirect `stderr` to `stdout`:
 [root@centos1 ~]# cat output.txt
 ls: cannot access '/nonexistentdirectory': No such file or directory
 [root@centos1 ~]#
+
 ```
+NOTE:
+* `cmd &> /dev/null` VS `cmd > /dev/null 2>&1`
+
+`cmd &> /dev/null` and `cmd > /dev/null 2>&1` both perform the same function: they redirect both standard output (stdout) and standard error (stderr) to /dev/null, effectively silencing all output from the command.
+
+
+
+
+
 ___
 ## User management
 ### Add/modify/delete
@@ -316,6 +326,25 @@ nmcli connection reload
 ```
 
 
+#### nmcli - adding a second IP
+```
+[root@rh23 ]# nmcli c show
+NAME    UUID                                  TYPE      DEVICE
+enp0s1  8aeefc3d-8952-36a0-8e9b-288bee11d438  ethernet  enp0s1
+lo      be80dabe-73c1-48ea-a6cd-6abed5165636  loopback  lo
+
+[root@rh23 ]# nmcli c  mod 8aeefc3d-8952-36a0-8e9b-288bee11d438 +ipv4.addresses 10.0.0.212/24
+
+[root@rh23 ]# nmcli con up 8aeefc3d-8952-36a0-8e9b-288bee11d438
+
+[root@rh23 ]# ip a
+2: enp0s1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 1e:d9:b1:28:22:9f brd ff:ff:ff:ff:ff:ff
+    inet 10.0.0.77/24 brd 10.0.0.255 scope global noprefixroute enp0s1
+       valid_lft forever preferred_lft forever
+    inet 10.0.0.212/24 brd 10.0.0.255 scope global secondary noprefixroute enp0s1
+       valid_lft forever preferred_lft forever
+```
 #### nmtui
 `nmtui` (Network Manager Text User Interface):
 * `nmtui` provides a text-based user interface for managing network settings, allowing users to configure network connections using a menu-driven interface in the terminal.
@@ -430,7 +459,32 @@ Installing:
  ```
 
  ### configure
- `/etc/vsftpd/vsftpd.conf`
+ `vi /etc/vsftpd/vsftpd.conf`
+* To enable anonymous access  :  
+```
+anonymous_enable=YES
+anon_root=/var/ftp
+
+```
+
+* Set Permissions
+```
+sudo chown -R ftp:ftp /var/ftp/pub
+sudo chmod -R 755 /var/ftp/pub
+```
+
+* Enable/Start service
+```
+sudo systemctl start vsftpd
+sudo systemctl enable vsftpd
+```
+
+* Enable Firewall
+```
+sudo firewall-cmd --permanent --add-service=ftp
+sudo firewall-cmd --reload            <-- This is non-disruptive to existing rules.
+```
+
 
 
 ## Client side FTP 
@@ -599,6 +653,7 @@ Updates vs Upgrades:
 
 
 ### Make a local repo
+#### --> USING AN ISO
 * In this example we will download an ISO DVD to mimic a DVD image on the system.
 * NOTE: DVD ISO's are always read-onlyl.
 * IMPORTANT: `../repodata/repomd.xml` needs to exist on the ISO image once mounted. If it is readonly, you need to copy it and mount it, then run `createrepo`
@@ -647,6 +702,37 @@ yum repolist all
 yum makecache
 
 ```
+
+#### --> USING AN LOCALDIR
+
+```
+sudo mkdir -p /var/www/html/repo
+cd /var/www/html/repo
+sudo dnf install --downloadonly --downloaddir=. nano wget curl
+
+yum install createrepo -y
+createrepo .
+
+firewall-cmd --add-port=80/tcp --permanent
+firewall-cmd --reload
+
+vi /etc/yum.repos.d/local.repo
+
+_________
+  [local-repo]  
+  name=Local Repository
+  baseurl=http://<file_server_ip>/repo
+  enabled=1
+  gpgcheck=0
+_________
+NOTE: enabled is 1(true) and gpgcheck is 0(false)
+
+yum clean all
+yum repolist
+
+yum install curl        <-- (to test)
+```
+
 
 ## Server Dump and support
 you can run the following :
@@ -2762,10 +2848,19 @@ systemctl enable rsyslog
 tail -f /var/log/messages
 ```
 
+### usr creation scrpt
+```
+#!/bin/bash
+
+useradd testuser
+echo "password" | passwd --stdin testuser
+```
+
+
 # Revision of things i dont know so well
 |section                                 |comments                                      |
 |----------------------------------------|----------------------------------------------|
-| [nmcli ](#nmcli)                       | I forget to set method and to perform reload |
+| [nmcli ](#nmcli)                       | I forget to set method and to perform reload, take note of adding a second IP|
 | [Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
 | [extend ext4 FS](#6-extend-the-filesystem-if-ext4) | I forget the command `resize2fs` |
 | [comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings, know the -empty and -delete cmds for find |
@@ -2780,6 +2875,10 @@ tail -f /var/log/messages
 | [Create a systemd service](#???)|to be done|
 | [Podman stuff](#containers-podman) | go over it multiple times |
 | [Centralized logging](#setup-centralized-logging)|new to me|
+| [create local repo](#make-a-local-repo)|new to me|
+| [setup ftp](#ftp-vsftpd---server-proc)|new to me|
+| [User creation script](#usr-creation-scrpt)|passwd can takein a --stdin flag|
+
 
 
 
