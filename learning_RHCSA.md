@@ -5,180 +5,163 @@ https://www.redhat.com/de/services/certification/rhcsa?pfe-7d312plns=exams
 # Table of Contents
 <!-- TOC tocDepth:2..3 chapterDepth:2..6 -->
 
-- [1. Exam Path](#1-exam-path)
-- [2. Links](#2-links)
-- [3. Redirecting Input/Output](#3-redirecting-inputoutput)
-- [4. User management](#4-user-management)
-  - [4.1. Add/modify/delete](#41-addmodifydelete)
-  - [4.2. Password aging](#42-password-aging)
-  - [4.3. Password quality](#43-password-quality)
-  - [4.4. Sudo](#44-sudo)
-- [5. File Permissions](#5-file-permissions)
-- [6. Control Services and daemons](#6-control-services-and-daemons)
-  - [6.1. systemctl enable and systemctl disable](#61-systemctl-enable-and-systemctl-disable)
-  - [6.2. systemctl mask and systemctl unmask](#62-systemctl-mask-and-systemctl-unmask)
-- [7. SSH](#7-ssh)
-  - [7.1. Config](#71-config)
-  - [7.2. Setup Keys](#72-setup-keys)
-- [8. Time Synchronization](#8-time-synchronization)
-- [9. Manage Linux Networking](#9-manage-linux-networking)
-  - [9.1. NetworkManager](#91-networkmanager)
-- [10. Setting kernel parameters at runtime](#10-setting-kernel-parameters-at-runtime)
-- [11. Install Kernel updates](#11-install-kernel-updates)
-- [12. Set Linux to boot of index 1 in the boot menu](#12-set-linux-to-boot-of-index-1-in-the-boot-menu)
-- [13. FTP (vsftpd - server proc)](#13-ftp-vsftpd---server-proc)
-  - [13.1. Server installation](#131-server-installation)
-- [14. Client side FTP](#14-client-side-ftp)
-- [15. Package Manager](#15-package-manager)
-  - [15.1. Repos](#151-repos)
-  - [15.2. Erase / Remove packages](#152-erase-remove-packages)
-  - [15.3. downloading and installing packages](#153-downloading-and-installing-packages)
-  - [15.4. downloading and installing packages](#154-downloading-and-installing-packages)
-  - [15.5. List config files for package](#155-list-config-files-for-package)
-  - [15.6. List config file for package](#156-list-config-file-for-package)
-  - [15.7. Redhat Verisoning](#157-redhat-verisoning)
-  - [15.8. Make a local repo](#158-make-a-local-repo)
-- [16. Server Dump and support](#16-server-dump-and-support)
-  - [16.1. Cockpit - web based interface for servers](#161-cockpit---web-based-interface-for-servers)
-- [17. Shells](#17-shells)
-  - [17.1. What is my shell?:](#171-what-is-my-shell)
-  - [17.2. What shells are installed?:](#172-what-shells-are-installed)
-- [18. Tuning](#18-tuning)
-  - [18.1. tuned and tuned-adm](#181-tuned-and-tuned-adm)
-  - [18.2. nice and renice](#182-nice-and-renice)
-- [19. ACL's](#19-acls)
-  - [19.1. Examples](#191-examples)
-- [20. SELinux (Security Enhanced Linux)](#20-selinux-security-enhanced-linux)
-  - [20.1. 3 ways to run SELinux](#201-3-ways-to-run-selinux)
-  - [20.2. get status](#202-get-status)
-  - [20.3. set status](#203-set-status)
-  - [20.4. Config](#204-config)
-  - [20.5. 2 Main conepts of SELinux](#205-2-main-conepts-of-selinux)
-  - [20.6. Managing SELinux](#206-managing-selinux)
-- [21. Storage](#21-storage)
-  - [21.1. Adding a Volume](#211-adding-a-volume)
-- [22. LVM](#22-lvm)
-  - [22.1. Creating an LVM](#221-creating-an-lvm)
-- [23. Extending LVM's](#23-extending-lvms)
-  - [23.1. Creating an LVM](#231-creating-an-lvm)
-- [24. Create a 1GB thin-provisioned volume](#24-create-a-1gb-thin-provisioned-volume)
-  - [24.1. Create a thin pool named mypool with 2 GB](#241-create-a-thin-pool-named-mypool-with-2-gb)
-  - [24.2. Create a thin-provisioned volume named log with 1 GB virtual size](#242-create-a-thin-provisioned-volume-named-log-with-1-gb-virtual-size)
-  - [24.3. Format the thin volume](#243-format-the-thin-volume)
-  - [24.4. Mount the thin volume](#244-mount-the-thin-volume)
-- [25. Extending the thin-provisioned volume](#25-extending-the-thin-provisioned-volume)
-  - [25.1. Summary](#251-summary)
-- [26. Stratis (advanced storage management)](#26-stratis-advanced-storage-management)
-  - [26.1. Install](#261-install)
-  - [26.2. Start](#262-start)
-  - [26.3. Add 2x 5GB volumes:](#263-add-2x-5gb-volumes)
-  - [26.4. Create a Pool](#264-create-a-pool)
-  - [26.5. Extend Pool](#265-extend-pool)
-  - [26.6. To see actual size](#266-to-see-actual-size)
-  - [26.7. FS snapshot](#267-fs-snapshot)
-  - [26.8. Mounting a Stratis Filesystem](#268-mounting-a-stratis-filesystem)
-- [27. NFS (Network File System)](#27-nfs-network-file-system)
-  - [27.1. Server Side setup and config](#271-server-side-setup-and-config)
-  - [27.2. Client side connection](#272-client-side-connection)
-- [28. SAMBA / CIFS (mounting non linux FS's)](#28-samba-cifs-mounting-non-linux-fss)
-- [29. Secure Samba](#29-secure-samba)
-- [30. VDO](#30-vdo)
-  - [30.1. Key Features of VDO:](#301-key-features-of-vdo)
-  - [30.2. Use cases of VDO:](#302-use-cases-of-vdo)
-  - [30.3. Setup](#303-setup)
-- [31. Boot Process](#31-boot-process)
-- [32. Systemd Targets](#32-systemd-targets)
-  - [32.1. Check current target](#321-check-current-target)
-  - [32.2. Targets can have dependancies](#322-targets-can-have-dependancies)
-  - [32.3. Display which runlevel is linked to which targets](#323-display-which-runlevel-is-linked-to-which-targets)
-  - [32.4. Change default target](#324-change-default-target)
-  - [32.5. Enable grub to log in debug](#325-enable-grub-to-log-in-debug)
-- [33. Repair file system corruption](#33-repair-file-system-corruption)
-- [34. Firewalld](#34-firewalld)
-  - [34.1. Install](#341-install)
-  - [34.2. Get predifined services that can be referenced to enable / disable](#342-get-predifined-services-that-can-be-referenced-to-enable-disable)
-  - [34.3. Get Zones and rules](#343-get-zones-and-rules)
-  - [34.4. Add a service temporarily](#344-add-a-service-temporarily)
-  - [34.5. Add a service Permanantly](#345-add-a-service-permanantly)
-  - [34.6. Add 3rd Party Service](#346-add-3rd-party-service)
-  - [34.7. Add a Port](#347-add-a-port)
-  - [34.8. Regect incomming connection from an IP](#348-regect-incomming-connection-from-an-ip)
-  - [34.9. Regect incomming connection ping traffic](#349-regect-incomming-connection-ping-traffic)
-  - [34.10. DROP outgoing traffic to a specific IP](#3410-drop-outgoing-traffic-to-a-specific-ip)
-- [35. Containers (podman)](#35-containers-podman)
-  - [35.1. Install](#351-install)
-  - [35.2. See what registries exist](#352-see-what-registries-exist)
-  - [35.3. Find an image](#353-find-an-image)
-  - [35.4. Download image](#354-download-image)
-  - [35.5. Run container](#355-run-container)
-  - [35.6. Stop container](#356-stop-container)
-  - [35.7. Create a new container from the downloaded image](#357-create-a-new-container-from-the-downloaded-image)
-  - [35.8. Manage containers using systemd](#358-manage-containers-using-systemd)
-  - [35.9. Setup a local repository](#359-setup-a-local-repository)
-  - [35.10. Custom container](#3510-custom-container)
-- [36. Create swap](#36-create-swap)
-- [37. Turn on SELinux policy container_manage_cgroup with persistance](#37-turn-on-selinux-policy-container_manage_cgroup-with-persistance)
-- [38. How to put grub into debug](#38-how-to-put-grub-into-debug)
-- [39. 2 Methods to change the root password when you dont know it.](#39-2-methods-to-change-the-root-password-when-you-dont-know-it)
-  - [39.1. How to replace root pwd the new way](#391-how-to-replace-root-pwd-the-new-way)
-  - [39.2. How to replace root pwd with rd.break](#392-how-to-replace-root-pwd-with-rdbreak)
-- [40. convert epoch to real date time](#40-convert-epoch-to-real-date-time)
-- [41. ausearch | aureport](#41-ausearch-aureport)
-- [42. Adding files to all users created](#42-adding-files-to-all-users-created)
-- [43. Activating a service in firewalld](#43-activating-a-service-in-firewalld)
-- [44. Change Keyboard to swiss german](#44-change-keyboard-to-swiss-german)
-- [45. Sctipting notes](#45-sctipting-notes)
-- [46. tar using bzip and then extract the data to dir /restore](#46-tar-using-bzip-and-then-extract-the-data-to-dir-restore)
-- [47. Prohibit root login over ssh](#47-prohibit-root-login-over-ssh)
-- [48. Troubleshooting systemd](#48-troubleshooting-systemd)
-- [49. Setup Centralized logging](#49-setup-centralized-logging)
-  - [49.1. Log Server](#491-log-server)
-  - [49.2. Sender Server](#492-sender-server)
-  - [49.3. Tail to see if you see the log entries on the log Server](#493-tail-to-see-if-you-see-the-log-entries-on-the-log-server)
-  - [49.4. usr creation scrpt](#494-usr-creation-scrpt)
-- [50. Tuned](#50-tuned)
-  - [50.1. To list the profiles](#501-to-list-the-profiles)
-  - [50.2. Apply Profile](#502-apply-profile)
-  - [50.3. Check active profile](#503-check-active-profile)
-  - [50.4. Create custom profile](#504-create-custom-profile)
-- [51. Script concepts](#51-script-concepts)
-  - [51.1. Overview](#511-overview)
-  - [51.2. Using RegEx to check if a var is an INT:](#512-using-regex-to-check-if-a-var-is-an-int)
-  - [51.3. Passing a var into a Function](#513-passing-a-var-into-a-function)
-- [52. Locking a user account](#52-locking-a-user-account)
-  - [52.1. lock an account from being logged in (still avail to root/ and user if pubkey is setup)](#521-lock-an-account-from-being-logged-in-still-avail-to-root-and-user-if-pubkey-is-setup)
-  - [52.2. lock an account from being logged in (ONLY avail to root)](#522-lock-an-account-from-being-logged-in-only-avail-to-root)
-- [53. Sudoers](#53-sudoers)
-  - [53.1. Grant sudo privileges a new user caladin](#531-grant-sudo-privileges-a-new-user-caladin)
-- [54. sticky bits and SETUID and SETGID bits](#54-sticky-bits-and-setuid-and-setgid-bits)
-  - [54.1. Sticky bit](#541-sticky-bit)
-  - [54.2. SETUID](#542-setuid)
-  - [54.3. SETGID](#543-setgid)
-- [55. Nuances with permissioning](#55-nuances-with-permissioning)
-  - [55.1. Write Permissions on a Directory (Without Execute):](#551-write-permissions-on-a-directory-without-execute)
-  - [55.2. Removing Execute Permission from a Directory Disables Navigation:](#552-removing-execute-permission-from-a-directory-disables-navigation)
-  - [55.3. Symbolic Link Permissions:](#553-symbolic-link-permissions)
-  - [55.4. Umask Influencing Default Permissions:](#554-umask-influencing-default-permissions)
-- [56. RAID](#56-raid)
-  - [56.1. Overview](#561-overview)
-  - [56.2. Setup RAID 0 (striping)](#562-setup-raid-0-striping)
-  - [56.3. Setup RAID 1 (Mirroring)](#563-setup-raid-1-mirroring)
-  - [56.4. Setup RAID 5 (Striping with Parity)](#564-setup-raid-5-striping-with-parity)
-- [57. journal](#57-journal)
-  - [57.1. Config](#571-config)
-  - [57.2. Basic Usage](#572-basic-usage)
-- [58. Check the change log for a package:](#58-check-the-change-log-for-a-package)
-- [59. TODO](#59-todo)
+- [Exam Path](#exam-path)
+- [Links](#links)
+- [Redirecting Input/Output](#redirecting-inputoutput)
+- [User management](#user-management)
+  - [Add/modify/delete](#addmodifydelete)
+  - [Password aging](#password-aging)
+  - [Password quality](#password-quality)
+  - [Sudo](#sudo)
+- [File Permissions](#file-permissions)
+- [Control Services and daemons](#control-services-and-daemons)
+  - [systemctl enable and systemctl disable](#systemctl-enable-and-systemctl-disable)
+  - [systemctl mask and systemctl unmask](#systemctl-mask-and-systemctl-unmask)
+- [SSH](#ssh)
+  - [Config](#config)
+  - [Setup Keys](#setup-keys)
+- [Time Synchronization](#time-synchronization)
+- [Manage Linux Networking](#manage-linux-networking)
+  - [NetworkManager](#networkmanager)
+- [Kernal related items](#kernal-related-items)
+  - [Setting kernel parameters at runtime](#setting-kernel-parameters-at-runtime)
+  - [Install Kernel updates](#install-kernel-updates)
+- [Set Linux to boot of index 1 in the boot menu](#set-linux-to-boot-of-index-1-in-the-boot-menu)
+- [FTP (vsftpd - server proc)](#ftp-vsftpd---server-proc)
+  - [Server installation](#server-installation)
+- [Client side FTP](#client-side-ftp)
+- [Package Manager](#package-manager)
+  - [Repos](#repos)
+  - [Erase / Remove packages](#erase-remove-packages)
+  - [downloading and installing packages](#downloading-and-installing-packages)
+  - [downloading and installing packages](#downloading-and-installing-packages)
+  - [List config files for package](#list-config-files-for-package)
+  - [List config file for package](#list-config-file-for-package)
+  - [Redhat Verisoning](#redhat-verisoning)
+  - [Make a local repo](#make-a-local-repo)
+- [Server Dump and support](#server-dump-and-support)
+  - [Cockpit - web based interface for servers](#cockpit---web-based-interface-for-servers)
+- [Shells](#shells)
+  - [What is my shell?:](#what-is-my-shell)
+  - [What shells are installed?:](#what-shells-are-installed)
+- [Tuning](#tuning)
+  - [tuned and tuned-adm](#tuned-and-tuned-adm)
+  - [nice and renice](#nice-and-renice)
+- [ACL's](#acls)
+  - [Examples](#examples)
+- [SELinux (Security Enhanced Linux)](#selinux-security-enhanced-linux)
+  - [2 ways to run SELinux](#2-ways-to-run-selinux)
+  - [get status](#get-status)
+  - [set status](#set-status)
+  - [Config](#config)
+  - [2 Main conepts of SELinux](#2-main-conepts-of-selinux)
+  - [Managing SELinux](#managing-selinux)
+- [Storage](#storage)
+  - [Adding a Volume](#adding-a-volume)
+  - [LVM](#lvm)
+  - [Extending LVM's](#extending-lvms)
+  - [Create a 1GB thin-provisioned volume](#create-a-1gb-thin-provisioned-volume)
+  - [Extending the thin-provisioned volume](#extending-the-thin-provisioned-volume)
+  - [Stratis (advanced storage management)](#stratis-advanced-storage-management)
+  - [FS snapshot](#fs-snapshot)
+  - [Mounting a Stratis Filesystem](#mounting-a-stratis-filesystem)
+  - [NFS (Network File System)](#nfs-network-file-system)
+  - [SAMBA / CIFS (mounting non linux FS's)](#samba-cifs-mounting-non-linux-fss)
+  - [Secure Samba](#secure-samba)
+  - [VDO](#vdo)
+- [Boot Process](#boot-process)
+- [Systemd Targets](#systemd-targets)
+  - [Check current target](#check-current-target)
+  - [Targets can have dependancies](#targets-can-have-dependancies)
+  - [Display which runlevel is linked to which targets](#display-which-runlevel-is-linked-to-which-targets)
+  - [Change default target](#change-default-target)
+  - [Enable grub to log in debug](#enable-grub-to-log-in-debug)
+- [Repair file system corruption](#repair-file-system-corruption)
+- [Firewalld](#firewalld)
+  - [Install](#install)
+  - [Get predifined services that can be referenced to enable / disable](#get-predifined-services-that-can-be-referenced-to-enable-disable)
+  - [Get Zones and rules](#get-zones-and-rules)
+  - [Add a service temporarily](#add-a-service-temporarily)
+  - [Add a service Permanantly](#add-a-service-permanantly)
+  - [Add 3rd Party Service](#add-3rd-party-service)
+  - [Add a Port](#add-a-port)
+  - [Regect incomming connection from an IP](#regect-incomming-connection-from-an-ip)
+  - [Regect incomming connection ping traffic](#regect-incomming-connection-ping-traffic)
+  - [DROP outgoing traffic to a specific IP](#drop-outgoing-traffic-to-a-specific-ip)
+- [Containers (podman)](#containers-podman)
+  - [Install](#install)
+  - [See what registries exist](#see-what-registries-exist)
+  - [Find an image](#find-an-image)
+  - [Download image](#download-image)
+  - [Run container](#run-container)
+  - [Stop container](#stop-container)
+  - [Create a new container from the downloaded image](#create-a-new-container-from-the-downloaded-image)
+  - [Manage containers using systemd](#manage-containers-using-systemd)
+  - [Setup a local repository](#setup-a-local-repository)
+  - [Custom container](#custom-container)
+- [Create swap](#create-swap)
+- [Turn on SELinux policy container_manage_cgroup with persistance](#turn-on-selinux-policy-container_manage_cgroup-with-persistance)
+- [How to put grub into debug](#how-to-put-grub-into-debug)
+- [2 Methods to change the root password when you dont know it.](#2-methods-to-change-the-root-password-when-you-dont-know-it)
+  - [How to replace root pwd the new way](#how-to-replace-root-pwd-the-new-way)
+  - [How to replace root pwd with rd.break](#how-to-replace-root-pwd-with-rdbreak)
+- [convert epoch to real date time](#convert-epoch-to-real-date-time)
+- [ausearch | aureport](#ausearch-aureport)
+- [Adding files to all users created](#adding-files-to-all-users-created)
+- [Activating a service in firewalld](#activating-a-service-in-firewalld)
+- [Change Keyboard to swiss german](#change-keyboard-to-swiss-german)
+- [Sctipting notes](#sctipting-notes)
+- [tar using bzip and then extract the data to dir /restore](#tar-using-bzip-and-then-extract-the-data-to-dir-restore)
+- [Prohibit root login over ssh](#prohibit-root-login-over-ssh)
+- [Troubleshooting systemd](#troubleshooting-systemd)
+- [Setup Centralized logging](#setup-centralized-logging)
+  - [Log Server](#log-server)
+  - [Sender Server](#sender-server)
+  - [Tail to see if you see the log entries on the log Server](#tail-to-see-if-you-see-the-log-entries-on-the-log-server)
+  - [usr creation scrpt](#usr-creation-scrpt)
+- [Tuned](#tuned)
+  - [To list the profiles](#to-list-the-profiles)
+  - [Apply Profile](#apply-profile)
+  - [Check active profile](#check-active-profile)
+  - [Create custom profile](#create-custom-profile)
+- [Script concepts](#script-concepts)
+  - [Overview](#overview)
+  - [Using RegEx to check if a var is an INT:](#using-regex-to-check-if-a-var-is-an-int)
+  - [Passing a var into a Function](#passing-a-var-into-a-function)
+- [Locking a user account](#locking-a-user-account)
+  - [lock an account from being logged in (still avail to root/ and user if pubkey is setup)](#lock-an-account-from-being-logged-in-still-avail-to-root-and-user-if-pubkey-is-setup)
+  - [lock an account from being logged in (ONLY avail to root)](#lock-an-account-from-being-logged-in-only-avail-to-root)
+- [Sudoers](#sudoers)
+  - [Grant sudo privileges a new user caladin](#grant-sudo-privileges-a-new-user-caladin)
+- [sticky bits and SETUID and SETGID bits](#sticky-bits-and-setuid-and-setgid-bits)
+  - [Sticky bit](#sticky-bit)
+  - [SETUID](#setuid)
+  - [SETGID](#setgid)
+- [Nuances with permissioning](#nuances-with-permissioning)
+  - [Write Permissions on a Directory (Without Execute):](#write-permissions-on-a-directory-without-execute)
+  - [Removing Execute Permission from a Directory Disables Navigation:](#removing-execute-permission-from-a-directory-disables-navigation)
+  - [Symbolic Link Permissions:](#symbolic-link-permissions)
+  - [Umask Influencing Default Permissions:](#umask-influencing-default-permissions)
+- [RAID](#raid)
+  - [Overview](#overview)
+  - [Setup RAID 0 (striping)](#setup-raid-0-striping)
+  - [Setup RAID 1 (Mirroring)](#setup-raid-1-mirroring)
+  - [Setup RAID 5 (Striping with Parity)](#setup-raid-5-striping-with-parity)
+- [journal](#journal)
+  - [Config](#config)
+  - [Basic Usage](#basic-usage)
+- [Check the change log for a package:](#check-the-change-log-for-a-package)
+- [TODO](#todo)
 
 <!-- /TOC -->
 
 # RH124
-## 1. Exam Path
+## Exam Path
 1. `EX200 RHCSA` -> tests your knowledge and skills in general system administration for a wide variety of environments and development scenarios. You must be an RHCSA to earn certification as a Red Hat Certified Engineer (RHCE®) .
 2. `EX294 RHCE` ->  focuses on automation skills and is based on Red Hat Enterprise Linux 8
 
 ---
-## 2. Links
+## Links
 
 * `ln` `src_file` `target name` will create a hard link 
 * `ln -s` `src_file` `target name` will create a soft link
@@ -187,7 +170,7 @@ A hard link will link direct to the inode whereas softlink will link to a filena
 
 ---
 
-## 3. Redirecting Input/Output
+## Redirecting Input/Output
 3 redirects in Linux:
 
 |*redirect*|*descriptor* |
@@ -223,8 +206,8 @@ NOTE:
 
 
 ___
-## 4. User management
-### 4.1. Add/modify/delete
+## User management
+### Add/modify/delete
 to Check if a user exists:
 `id <username>`
 
@@ -249,7 +232,7 @@ To replace the groups of a user :
 `usermod -G <group> <user>` this will remove existing groups
 
 
-### 4.2. Password aging
+### Password aging
 
 Default config : `/etc/login.defs`
 * if you change this file it will be active for any new logins created. 
@@ -300,7 +283,7 @@ CMDLINE: `chage -d <lastday> -m <mindays> -M <maxdays> -W <warndays> -I -E <expi
 eg: `chage -m 5 -M 90 -W 10 -I 3 -E 30 bababutt` results in :
 ironman:$6$Sa3CEa7va56INP3Q$zC4sGsgJAn0RjeYfD4Yh5STzc7CSV6oRez3jgb0tvkygUGxa3R.lNgnQvDF/K5W8bQZZUUjWjdDBt4RcOOx2l0:19949:`5`:`90`:`10`:`3`:`30`:
 
-### 4.3. Password quality
+### Password quality
 ```
 [root@rhel security]# cat /etc/security/pwquality.conf
 # Configuration for systemwide password quality limits
@@ -316,18 +299,18 @@ minlen = 9
 # maxrepeat = 0
 ```
 
-### 4.4. Sudo
+### Sudo
 to add a user to get access to run root commands add the user to group `wheel` :
 
 `usermod -aG wheel aryan`
 ___
 
-## 5. File Permissions
+## File Permissions
 * you need `execute` rights to `cd` into a directory
 * if a file owned by root:root exists in a user directory, the user can remove the file because he is the owner of the directory and has `rwx` on the directory.
 
 ___
-## 6. Control Services and daemons
+## Control Services and daemons
 * Systemd is the first proc started on the system with PID `1`
 ```
 [root@centos1 ~]# ps  -fp 1
@@ -348,13 +331,13 @@ root           1       0  0 Aug13 ?        00:00:06 /usr/lib/systemd/systemd --s
   ...  
   ```
 
-### 6.1. systemctl enable and systemctl disable
+### systemctl enable and systemctl disable
 These commands are used to control whether a service starts automatically at boot.
 
 * `enable`-  you create a symbolic link in the system’s service directories (usually /etc/systemd/system/) that tells systemd to start the service automatically during boot.
 * `disable`- When you disable a service, you remove the symbolic link, so systemd no longer starts the service automatically during boot.
 
-### 6.2. systemctl mask and systemctl unmask
+### systemctl mask and systemctl unmask
 These commands are used to completely prevent a service from being started, either manually or automatically.
 
 * `mask`- When you mask a service, you create a symbolic link that points to `/dev/null`, effectively blocking the service from being started by any means *(including manually using systemctl start)*.
@@ -362,8 +345,8 @@ These commands are used to completely prevent a service from being started, eith
 * `unmask`- When you unmask a service, you remove the symbolic link pointing to /dev/null, allowing the service to be started manually or automatically again.
 ___
 
-## 7. SSH
-### 7.1. Config
+## SSH
+### Config
 Config : `/etc/ssh/sshd_config`
 * Some important config params:
 
@@ -377,7 +360,7 @@ AllowUsers aryan cnory  # restrict ssh to these users
 Port 22                 # runs on 22 by default, can be changed
 ```
 
-### 7.2. Setup Keys
+### Setup Keys
 STEP 1
 
     ssh- keygen
@@ -401,7 +384,7 @@ The best practice is to generate a separate SSH key pair for each server. Here's
 <b>Flexibility</b>: If you ever need to change the key or restrict access, having separate keys makes it easier to manage these changes without interrupting access between servers.
 
 ___
-## 8. Time Synchronization
+## Time Synchronization
 
 `timedatectl`is used 
 ```
@@ -452,13 +435,13 @@ chronyc makestep
 ```
 
 ___
-## 9. Manage Linux Networking
+## Manage Linux Networking
 * `yum install bind-utils` to install nslookup etc.
 * `yum install net-tools` to install netstat etc.
 
-### 9.1. NetworkManager
+### NetworkManager
 
-#### 9.1.1. Important files:
+#### Important files:
 * <b>directory</b>: `/etc/sysconfig/network-scripts`
 ```
 [root@centos2 network-scripts]# cat ifcfg-eth0
@@ -484,7 +467,7 @@ USERCTL=no
 * <b>file</b>: /etc/resolv.conf -> list of dns servers
 * <b>file</b>: /etc/nsswitch.conf -> how to resolve names, first files then dns etc.
 
-#### 9.1.2. nmcli
+#### nmcli
 `nmcli` (Network Manager Command Line Interface):
 * `nmcli` is a command-line tool used to interact with NetworkManager and manage network settings, such as configuring and controlling network interfaces, setting up network connections (e.g., Ethernet, Wi-Fi), and viewing network status.
 
@@ -497,7 +480,7 @@ nmcli connection reload
 ```
 
 
-#### 9.1.3. nmcli - adding a second IP
+#### nmcli - adding a second IP
 ```
 [root@rh23 ]# nmcli c show
 NAME    UUID                                  TYPE      DEVICE
@@ -516,14 +499,14 @@ lo      be80dabe-73c1-48ea-a6cd-6abed5165636  loopback  lo
     inet 10.0.0.212/24 brd 10.0.0.255 scope global secondary noprefixroute enp0s1
        valid_lft forever preferred_lft forever
 ```
-#### 9.1.4. nmtui
+#### nmtui
 `nmtui` (Network Manager Text User Interface):
 * `nmtui` provides a text-based user interface for managing network settings, allowing users to configure network connections using a menu-driven interface in the terminal.
 Usage Scenarios: Useful for users who prefer a semi-graphical interface or are working in a non-GUI environment, such as a server, and need a more user-friendly tool than nmcli to configure networks.
 
 
 
-#### 9.1.5. nm-connection-editor
+#### nm-connection-editor
 `nm-connection-editor`:
 * `nm-connection-editor` is a graphical tool used to create, edit, and manage network connections. It provides a GUI interface for configuring all types of network connections, including wired, wireless, VPN, and more.
 
@@ -531,16 +514,16 @@ Usage Scenarios: Useful for users who prefer a semi-graphical interface or are w
 
 
 
-#### 9.1.6. Important commands
-##### 9.1.6.1. ping
+#### Important commands
+##### ping
 
-##### 9.1.6.2. ifconfig / ip
+##### ifconfig / ip
 
 
-##### 9.1.6.3. ifup / ifdown
+##### ifup / ifdown
 -> interface up / interface down
 
-#### 9.1.7. netstat
+#### netstat
 ```
 [root@centos1 ~]# netstat -rnv
 Kernel IP routing table
@@ -552,10 +535,10 @@ Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
 ```
 
 
-##### 9.1.7.1. traceroute
+##### traceroute
 
 
-##### 9.1.7.2. tcpdump
+##### tcpdump
 ```
 [root@centos1 sshd_config.d]# tcpdump -i eth0
 dropped privs to tcpdump
@@ -565,9 +548,9 @@ listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
 06:41:49.711317 IP centos1.ssh > xdsl-188-154-47-102.adslplus.ch.50406: Flags [P.], seq 60:96, ack 1, win 1002, options [nop,nop,TS val 1355438850 ecr 1729410591], length 36
 06:41:49.711513 IP centos1.ssh > xdsl-188-154-47-102.adslplus.ch.50406: Flags [P.], seq 96:204, ack 1, win 1002, options [nop,nop,TS val 1355438850 ecr 1729410591], length 108
 ```
-##### 9.1.7.3. nslookup / dig
+##### nslookup / dig
 
-##### 9.1.7.4. ethtool
+##### ethtool
 ```
 # ethtool eth0
 Settings for eth0:
@@ -580,8 +563,9 @@ Settings for eth0:
 	Advertised pause frame use: No
 ```
 ___
+## Kernal related items
 
-## 10. Setting kernel parameters at runtime
+### Setting kernel parameters at runtime
 * We use `sysctl` for this, you can also add setting to a file called `/etc/sysctl.conf` and then run `sysctl -p ` to activate the setting at runtime. The `-p` option will reread the `/etc/sysctl.conf` file by default or you could specify ARG1 as a custom file.
 * Here we will enable ip forwarding as an example:
 
@@ -605,7 +589,7 @@ net.ipv4.ip_forward_update_priority = 1
 net.ipv4.ip_forward_use_pmtu = 0
 
 ```
-## 11. Install Kernel updates
+### Install Kernel updates
 * `kernel`is with an `el` not `al`
 * The command updates the Kernel and Grub by default will boot the latest kernel version. 
 * Previous kernels are NOT removed
@@ -615,7 +599,7 @@ yum update kernel
 
 ```
 
-## 12. Set Linux to boot of index 1 in the boot menu
+## Set Linux to boot of index 1 in the boot menu
 ```
 
 [root@test2 ~]# grubby --info=ALL
@@ -651,9 +635,9 @@ The default is /boot/loader/entries/bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue.co
 
 ```
 
-## 13. FTP (vsftpd - server proc)
+## FTP (vsftpd - server proc)
 
-### 13.1. Server installation
+### Server installation
 ```
 # yum install vsftpd
 DigitalOcean Droplet Agent                                                                                                                                                                         33 kB/s | 3.3 kB     00:00
@@ -694,7 +678,7 @@ sudo firewall-cmd --reload            <-- This is non-disruptive to existing rul
 
 
 
-## 14. Client side FTP
+## Client side FTP
 ```
 # yum install ftp
 DigitalOcean Droplet Agent                                                                                                                                                                         56 kB/s | 3.3 kB     00:00
@@ -732,13 +716,13 @@ ftp> bye
 ```
 ___
 
-## 15. Package Manager
+## Package Manager
 
-### 15.1. Repos
+### Repos
 `/etc/yum.repos.d/*`
 
-### 15.2. Erase / Remove packages
-#### 15.2.1. Using rpm -e
+### Erase / Remove packages
+#### Using rpm -e
 NOTE: Problem with this is will not remove dependancies!!!
 ```
 $ rpm -qa |grep -i bind-utils
@@ -749,7 +733,7 @@ $
 ```
 
 
-#### 15.2.2. Using yum
+#### Using yum
 ```
 [root@centos1 ~]# yum remove bind-utils
 Dependencies resolved.
@@ -773,7 +757,7 @@ Freed space: 4.6 M
 Is this ok [y/N]: y
 ```
 
-### 15.3. downloading and installing packages
+### downloading and installing packages
 
 Use `wget` to get the rpm and install using `rpm -hiv zsh-5.8-7.el9.x86_64.rpm`
 ```
@@ -798,7 +782,7 @@ Updating / installing...
 [root@centos1 ~]#
 ```
 
-### 15.4. downloading and installing packages
+### downloading and installing packages
 Use `rpm -qi` to query pkg information
 
 ```
@@ -828,7 +812,7 @@ command completion, shell functions (with autoloading), a history
 mechanism, and more.
 ```
 
-### 15.5. List config files for package
+### List config files for package
 Here you can use `rpm -qc <PKG>`
 
 ```
@@ -841,7 +825,7 @@ Here you can use `rpm -qc <PKG>`
 /etc/zshrc
 ```
 
-### 15.6. List config file for package
+### List config file for package
 Use `rpm -qf <FULL PATH TO FILE>` to find out which package a file belongs to.
 
 ```
@@ -852,15 +836,15 @@ NetworkManager-1.43.9-1.el9.x86_64
 [root@centos1 ~]#
 ```
 
-### 15.7. Redhat Verisoning
+### Redhat Verisoning
 
 Updates vs Upgrades:
 
 * `yum update -y` : deletes packages and auto confirms. Same as `yum upgrade -y`
 
 
-### 15.8. Make a local repo
-#### 15.8.1. --> USING AN ISO
+### Make a local repo
+#### --> USING AN ISO
 * In this example we will download an ISO DVD to mimic a DVD image on the system.
 * NOTE: DVD ISO's are always read-onlyl.
 * IMPORTANT: `../repodata/repomd.xml` needs to exist on the ISO image once mounted. If it is readonly, you need to copy it and mount it, then run `createrepo`
@@ -910,7 +894,7 @@ yum makecache
 
 ```
 
-#### 15.8.2. --> USING AN LOCALDIR
+#### --> USING AN LOCALDIR
 
 ```
 sudo mkdir -p /var/www/html/repo
@@ -941,7 +925,7 @@ yum install curl        <-- (to test)
 ```
 
 
-## 16. Server Dump and support
+## Server Dump and support
 you can run the following :
 `sos report`
 
@@ -958,7 +942,7 @@ Your sosreport has been generated and saved in:
 Please send this file to your support representative.
 ````
 
-### 16.1. Cockpit - web based interface for servers
+### Cockpit - web based interface for servers
 ```
 # yum install cockpit
 CentOS Stream 9 - BaseOS                                                                                                                                                                                                                                                  13 MB/s | 8.2 MB     00:00
@@ -991,14 +975,14 @@ You can access it with `https://123.123.123.123:9090`
 ___
 # RH134
 
-## 17. Shells
+## Shells
 
-### 17.1. What is my shell?:
+### What is my shell?:
 ```
 [root@centos1 log]# echo $0
 -bash
 ````
-### 17.2. What shells are installed?:
+### What shells are installed?:
 ```
 [root@centos1 log]# cat /etc/shells
 /bin/sh
@@ -1010,8 +994,8 @@ ___
 ````
 ___
 
-## 18. Tuning
-### 18.1. tuned and tuned-adm
+## Tuning
+### tuned and tuned-adm
 * `tuned-adm list` lists the list of profiles available:
 
 ```
@@ -1068,7 +1052,7 @@ Profile can be swtiched using cockpit https://x.x.x.x:9090
 ___
 
 
-### 18.2. nice and renice
+### nice and renice
 1 CPU means computation of 1 process a time. FIFO
 
 * Nice Values:
@@ -1097,7 +1081,7 @@ ___
 
 ___
 
-## 19. ACL's
+## ACL's
 setfacl - set file access control lists
 getfacl - view file access control lists
 
@@ -1113,7 +1097,7 @@ IMPORTANT:
 * `rwxrwxrwx+` signifies ACL's are applied
 * setting `w` permission with ACL does <b>NOT</b> allow to remove the file
 
-### 19.1. Examples
+### Examples
 
 ```
 [root@centos1 tmp]# getfacl readme.md
@@ -1133,7 +1117,7 @@ other::r--
 
 
 ___
-## 20. SELinux (Security Enhanced Linux)
+## SELinux (Security Enhanced Linux)
 Linux kernel security module for supporting access control security policies and mandatory access rights. The project is by NSA and SELinux community.
 
 
@@ -1145,14 +1129,14 @@ SELinux uses MAC (<b>M</b>andatory <b>A</b>ccess <b>C</b>ontrol)
 *  Access to resources is controlled by a central authority through predefined policies. These policies dictate what actions users can perform on resources, regardless of the resource owner's wishes.
 * The access control decisions in MAC are based on labels and policies that are predefined by the system administrators. These labels are associated with files, processes, and users, and the system enforces these policies strictly.
 
-### 20.1. 3 ways to run SELinux
+### 2 ways to run SELinux
 |Type              | Meaning                    | Setting     | 
 |------------------|----------------------------|-------------|
 |<b>Enforcing</b>  | Enabled(_default_)         | setenforce 1|
 |<b>Permissive</b> | Disabled but logs activity | setenforce 0|
 
 
-### 20.2. get status
+### get status
 ```
 [root@centos1 tmp]# sestatus
 SELinux status:                 enabled
@@ -1170,7 +1154,7 @@ Max kernel policy version:      33
 Enforcing
 ```
 
-### 20.3. set status
+### set status
 This will remain in effect until a restart occurs.
 ```
 [root@centos1 tmp]# getenforce
@@ -1186,7 +1170,7 @@ Enforcing
 
 ```
 
-### 20.4. Config
+### Config
 This will be permanant (incl. after restart)
 1. Edit the file: `/etc/selinux/config`:
 ```
@@ -1197,7 +1181,7 @@ SELINUX=disabled
 2.  `touch /.autorelabel`
 
 
-### 20.5. 2 Main conepts of SELinux
+### 2 Main conepts of SELinux
 Example every file/dir has USER and TYPE example
 
 [root@centos1 tmp]# ls -lZ /usr/sbin/httpd
@@ -1237,8 +1221,8 @@ unix  2      [ ]         DGRAM                    484781   31659/httpd          
 unix  3      [ ]         STREAM     CONNECTED     484726   31659/httpd          system_u:system_r:httpd_t:s0
 ```
 
-### 20.6. Managing SELinux
-#### 20.6.1. Get config
+### Managing SELinux
+#### Get config
 Get a list of the boolean values that are currently set:
 ```
 [root@centos1 ~]# getsebool -a |more
@@ -1260,7 +1244,7 @@ cluster_use_execmem --> off
 ...
 ```
 
-#### 20.6.2. Set config
+#### Set config
 ```
 [root@centos2 ~]# getsebool -a |grep httpd_can_connect_ftp
 httpd_can_connect_ftp --> on
@@ -1269,7 +1253,7 @@ httpd_can_connect_ftp --> on
 httpd_can_connect_ftp --> off
 ```
 
-#### 20.6.3. Set a label
+#### Set a label
 ```
 [root@centos1 ~]# ls -lrtZ aiden.sh
 -rw-r--r--. 1 root root unconfined_u:object_r:admin_home_t:s0 0 Aug 17 07:17 aiden.sh
@@ -1283,9 +1267,9 @@ httpd_can_connect_ftp --> off
 
 
 ___
-## 21. Storage
-### 21.1. Adding a Volume
-#### 21.1.1. 1) Attach a HDD
+## Storage
+### Adding a Volume
+#### 1) Attach a HDD
 I added a new volume and this is the additional output of `fdisk -l`
 ```
 Disk /dev/sda: 2 GiB, 2147483648 bytes, 4194304 sectors
@@ -1295,7 +1279,7 @@ Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
-#### 21.1.2. 2) Create a partition
+#### 2) Create a partition
 ```
 [root@centos1 ~]# fdisk /dev/sda
 ...
@@ -1323,7 +1307,7 @@ Syncing disks.
 # ! NOTE: YOU ONLY USE PVCREATE WHEN WANTING TO USE LVM
 
 
-#### 21.1.3. 3) format the Filesystem
+#### 3) format the Filesystem
 ```
 [root@centos1 ~]# mkfs.xfs /dev/sda1
 meta-data=/dev/sda1              isize=512    agcount=4, agsize=131008 blks
@@ -1340,7 +1324,7 @@ Discarding blocks...Done.
 ```
 
 
-#### 21.1.4. 4) mount the volume
+#### 4) mount the volume
 ```
 [root@centos1 ~]# mkdir /data
 [root@centos1 ~]# mount /dev/sda1 /data
@@ -1355,7 +1339,7 @@ tmpfs            46M     0   46M   0% /run/user/0
 ```
 
 
-#### 21.1.5. 5) Update `/etc/fstab` to persist
+#### 5) Update `/etc/fstab` to persist
 ```
 [root@centos1 ~]# vi /etc/fstab
 ---ADD THIS:
@@ -1363,7 +1347,7 @@ tmpfs            46M     0   46M   0% /run/user/0
 ```
 ___
 
-## 22. LVM
+### LVM
 LVM's allow physical disks to be combined together into a logical volume or Volume group and that volumen group can then see seen as a single volume which can be partitioned.
 
 
@@ -1417,8 +1401,8 @@ The heirarchy from bottom to top, in how LVM's are configured
 </table>
 
 
-### 22.1. Creating an LVM
-#### 22.1.1. 1) Attach a HDD
+#### Creating an LVM
+##### 1) Attach a HDD
 
 ```
 [root@centos2 ~]# fdisk -l
@@ -1430,7 +1414,7 @@ Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
-#### 22.1.2. 2) Create a Partition
+##### 2) Create a Partition
 ```
 [root@centos2 ~]# fdisk /dev/sda
 
@@ -1517,7 +1501,7 @@ Calling ioctl() to re-read partition table.
 Syncing disks.
 ```
 
-#### 22.1.3. 3) Create a Physical Volume
+##### 3) Create a Physical Volume
 ```
 [root@centos2 ~]# pvcreate  /dev/sda1
   Physical volume "/dev/sda1" successfully created.
@@ -1537,7 +1521,7 @@ Syncing disks.
   PV UUID               s2UPPt-jd6W-Qw6t-bgIn-BRY0-OL5C-XP9ecX
 ```
 
-#### 22.1.4. 3) Create a volume Group(VG)
+##### 4) Create a volume Group(VG)
 ```
 [root@centos2 ~]# vgcreate data_vg /dev/sda1
   Volume group "data_vg" successfully created
@@ -1566,7 +1550,7 @@ Syncing disks.
 ```
 
 
-#### 22.1.5. 4) Create a logical Volum(LV)
+##### 5) Create a logical Volum(LV)
 ```
 [root@centos2 ~]# lvcreate -n data_lv --size 1000MB data_vg
   Logical volume "data_lv" created.
@@ -1590,7 +1574,7 @@ Syncing disks.
   Block device           253:0
 ```
 
-#### 22.1.6. 5) Format the disk
+##### 6) Format the disk
 ```
 [root@centos2 ~]# mkfs.xfs /dev/data_vg/data_lv
 meta-data=/dev/data_vg/data_lv   isize=512    agcount=4, agsize=64000 blks
@@ -1607,7 +1591,7 @@ Discarding blocks...Done.
 [root@centos2 ~]#
 ```
 
-#### 22.1.7. 6) Mount the LV
+##### 7) Mount the LV
 ```
 [root@centos2 ~]# mkdir /data
 [root@centos2 ~]# mount /dev/data_vg/data_lv /data
@@ -1621,7 +1605,7 @@ tmpfs                         47M     0   47M   0% /run/user/0
 /dev/mapper/data_vg-data_lv  936M   39M  898M   5% /data          <-- Mounted!
 ```
 
-## 23. Extending LVM's
+### Extending LVM's
 I have filled up the disk with `dd``
 ```
 [root@centos2 data]# df -h /data
@@ -1629,8 +1613,8 @@ Filesystem                   Size  Used Avail Use% Mounted on
 /dev/mapper/data_vg-data_lv  936M  936M  212K 100% /data
 ```
 
-### 23.1. Creating an LVM
-#### 23.1.1. 1) Attach a HDD
+#### Creating an LVM
+##### 1) Attach a HDD
 
 ```
 [root@centos2 ~]# fdisk -l
@@ -1642,7 +1626,7 @@ Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
-#### 23.1.2. 2) Create a Partition
+##### 2) Create a Partition
 ```
 [root@centos2 ~]# fdisk /dev/sdb
 Command (m for help): n
@@ -1691,7 +1675,7 @@ Calling ioctl() to re-read partition table.
 Syncing disks.
 ```
 
-#### 23.1.3. 3) Create a Physical Volume
+##### 3) Create a Physical Volume
 ```
 [root@centos2 ~]# pvcreate  /dev/sdb1
   Physical volume "/dev/sda1" successfully created.
@@ -1722,8 +1706,8 @@ Syncing disks.
   PV UUID               8dQIGc-s6S0-HVGr-7dFE-TueP-rWNx-71819A
   ```
 
-#### 23.1.4. 3) Extend the volume Group(VG)
 ```
+##### 3) Extend the volume Group(VG)
 [root@centos2 ~]# vgextend data_vg /dev/sdb1
   Volume group "data_vg" successfully extended
 
@@ -1752,7 +1736,7 @@ Syncing disks.
 ```
 
 
-#### 23.1.5. 4) Extend the logical Volum(LV)
+##### 4) Extend the logical Volum(LV)
 ```
 [root@centos2 ~]# lvextend -L +2GB /dev/mapper/data_vg-data_lv
   Size of logical volume data_vg/data_lv changed from 1000.00 MiB (250 extents) to <2.98 GiB (762 extents).
@@ -1779,7 +1763,7 @@ Syncing disks.
 ```
 
 
-#### 23.1.6. 5) Extend the Filesystem if XFS
+##### 5) Extend the Filesystem if XFS
 IMPORTANT:
 * Use `resize2fs` for ext2/ext3/ext4 filesystems.
 * Use `xfs_growfs` for expanding XFS filesystems.
@@ -1807,7 +1791,7 @@ tmpfs                         47M     0   47M   0% /run/user/0
 /dev/mapper/data_vg-data_lv  3.0G  951M  2.0G  32% /data
 ```
 
-#### 23.1.7. 6) Extend the Filesystem if EXT4
+##### 6) Extend the Filesystem if EXT4
 ```
 [root@centos1 data]# resize2fs /dev/mapper/data_vg-data_lv
 resize2fs 1.46.5 (30-Dec-2021)
@@ -1826,29 +1810,29 @@ tmpfs                     78M     0   78M   0% /run/user/0
 ```
 
 
-## 24. Create a 1GB thin-provisioned volume
+### Create a 1GB thin-provisioned volume
 
-### 24.1. Create a thin pool named mypool with 2 GB
+#### Create a thin pool named mypool with 2 GB
 `lvcreate -L 2G --thinpool mypool data-vg`
 
-### 24.2. Create a thin-provisioned volume named log with 1 GB virtual size
+#### Create a thin-provisioned volume named log with 1 GB virtual size
 `lvcreate -V 1G --thin -n log /dev/data-vg/mypool`
 
-### 24.3. Format the thin volume
+#### Format the thin volume
 `mkfs.ext4 /dev/data-vg/log`
 
-### 24.4. Mount the thin volume
+#### Mount the thin volume
 `mkdir /log`
 
 `mount /dev/data-vg/log /log`
 ___
-## 25. Extending the thin-provisioned volume
+### Extending the thin-provisioned volume
 ```
 lvextend -L 1.5G /dev/data-vg/log
 resize2fs /dev/data-vg/log
 ```
 ___
-### 25.1. Summary
+#### Summary
 
 * The <b>thin pool LV (mypool)</b>> manages the actual physical storage available to all the thin-provisioned volumes within it. If you extend the thin pool (i.e., allocate more physical space to mypool), the thin volumes inside it can grow or accommodate more data.
 * The <b>thin-provisioned LV (log)</b> is a virtual LV that resides inside the thin pool. When you write data to log, the thin pool allocates the necessary blocks from its data area. The thin pool's metadata tracks which blocks belong to which thin volumes.
@@ -1867,16 +1851,16 @@ ___
 ```
 ___
 
-## 26. Stratis (advanced storage management)
+### Stratis (advanced storage management)
 
-### 26.1. Install
 `yum install stratis-cli stratisd`
-
-### 26.2. Start
+#### Install
 `systemctl start stratisd`
+
+#### Start
 `systemctl status stratisd`
 
-### 26.3. Add 2x 5GB volumes:
+#### Add 2x 5GB volumes:
 `fdisk -l` shows:
 ```
 Disk /dev/sdd: 5 GiB, 5368709120 bytes, 10485760 sectors
@@ -1893,7 +1877,7 @@ Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
-### 26.4. Create a Pool
+#### Create a Pool
 ```
 [root@centos2 data]# stratis pool create pool1 /dev/sdd
 
@@ -1902,7 +1886,7 @@ Name           Total / Used / Free    Properties                                
 pool1   5 GiB / 526 MiB / 4.49 GiB   ~Ca,~Cr, Op   8a4e4e1c-aff5-4a77-9e8e-03967aedc381   WS001
 ```
 
-### 26.5. Extend Pool
+#### Extend Pool
 ```
 [root@centos2 data]# stratis pool add-data pool1 /dev/sde
 
@@ -1911,7 +1895,7 @@ Name            Total / Used / Free    Properties                               
 pool1   10 GiB / 532 MiB / 9.48 GiB   ~Ca,~Cr, Op   8a4e4e1c-aff5-4a77-9e8e-03967aedc381
 ```
 
-### 26.6. To see actual size
+#### To see actual size
 <b>Thin Provisioning</b>: Stratis uses thin provisioning, which means it can allocate storage space flexibly without actually reserving physical space upfront. When you create a Stratis filesystem, it allows the filesystem to grow dynamically up to the size of the underlying pool.
 
 <b>Virtual Capacity</b>: Stratis does not pre-allocate the full storage space when creating filesystems. Instead, it presents a "virtual" capacity to the operating system and only consumes physical space as data is written to the filesystem. This virtual capacity can be much larger than the actual physical storage you initially allocated.
@@ -1938,7 +1922,7 @@ pool1   datastorefs   1 TiB / 546 MiB / 1023.47 GiB / None   Aug 17 2024 11:07  
 
 <b>Thin Provisioning Impact</b>: Since Stratis uses thin provisioning, the filesystem reports a large potential capacity (1 TiB), but it only occupies a small amount of space (546 MiB) because that's all the actual data stored. The pool's usage reflects all allocated blocks, including metadata.
 
-### 26.7. FS snapshot
+### FS snapshot
 A Stratis snapshot is a point-in-time, read-only copy of a Stratis filesystem that captures the state of the filesystem at a specific moment. Snapshots are useful for preserving data before making changes that might be risky or for creating backups that can be quickly reverted to if needed.
 ```
 [root@centos2 ~]# stratis filesystem snapshot pool1 datastorefs datastorefs-snap
@@ -1948,7 +1932,7 @@ Pool    Filesystem         Total / Used / Free / Limit            Created       
 pool1   datastorefs        1 TiB / 546 MiB / 1023.47 GiB / None   Aug 17 2024 11:07   /dev/stratis/pool1/datastorefs        9cfb0211-4258-41be-9843-008ecdaf7555
 pool1   datastorefs-snap   1 TiB / 546 MiB / 1023.47 GiB / None   Aug 19 2024 06:08   /dev/stratis/pool1/datastorefs-snap   f8f45b16-9f00-46ec-9b35-bf162160ad23
 ```
-### 26.8. Mounting a Stratis Filesystem
+### Mounting a Stratis Filesystem
 `vi /etc/fstab`
 
 ```
@@ -1960,9 +1944,9 @@ UUID=f8f45b16-9f00-46ec-9b35-bf162160ad23 /bigdataSnap  xfs defaults,x-systemd.r
 
 ___
 
-## 27. NFS (Network File System)
+### NFS (Network File System)
 
-### 27.1. Server Side setup and config
+#### Server Side setup and config
 ```
 yum install nfs-utils -y
 vi /etc/exports
@@ -1984,8 +1968,8 @@ sudo firewall-cmd --reload
 |sync| Writes are committed to disk before the request is completed.|
 |no_subtree_check| Prevents subtree checking, which can improve performance.|
 
-### 27.2. Client side connection
 
+#### Client side connection
 ```
 yum install nfs-utils -y
 vi /etc/fstab
@@ -1997,7 +1981,7 @@ mount -a
 ```
 ___
 
-## 28. SAMBA / CIFS (mounting non linux FS's)
+### SAMBA / CIFS (mounting non linux FS's)
 
 * Sambra shares its FS though SMB (Server Message Block protocol)
 * CIFS (Common Internet File System) became an extension of SMB and have become synonymous with one another.
@@ -2065,7 +2049,7 @@ Mount the samba share
 mount -t cifs //192.168.1.95/Anonymous /mnt/sambashare/
 ```
 
-## 29. Secure Samba
+### Secure Samba
 
 • Create a group smbgrp & user larry to access the samba server with proper authentication
 ```
@@ -2107,12 +2091,12 @@ systemctl restart nmb
 ___
 
 
-## 30. VDO
+### VDO
 VDO (Virtual Data Optimizer) is a storage optimization technology designed to 
 * reduce the actual amount of data stored on physical storage devices by using techniques like deduplication and compression. 
 * VDO allows you to create logical volumes that are much larger than the actual physical space they occupy on the disk. 
 
-### 30.1. Key Features of VDO:
+#### Key Features of VDO:
 | Purpose | description |
 |-|-|
 |Deduplication|VDO automatically identifies and removes duplicate copies of data at the block level. If identical blocks of data are written more than once, only one copy is stored, while the others are referenced to the original.|
@@ -2120,7 +2104,7 @@ VDO (Virtual Data Optimizer) is a storage optimization technology designed to
 |Thin Provisioning|VDO allows the creation of logical volumes that appear larger than the available physical storage (logical size). The actual physical storage is consumed only as data is written, so users can provision large volumes without immediately using up all physical space.|
 |Space Efficiency|By combining deduplication, compression, and thin provisioning, VDO enables you to store more data in less physical space, optimizing the utilization of storage resources.|
 
-### 30.2. Use cases of VDO:
+#### Use cases of VDO:
 | Use Case | description |
 |-|-|
 |Backup and Archival Storage|VDO can reduce the size of backups by eliminating duplicate data across multiple backups, especially useful for long-term retention.|
@@ -2128,7 +2112,7 @@ VDO (Virtual Data Optimizer) is a storage optimization technology designed to
 |General Purpose Storage|It can also be used for any kind of general-purpose storage, where space optimization is a priority.|
 
 
-### 30.3. Setup
+#### Setup
 ***WORKS ONLY ON REHEL 9.4, maybe 9.3, not on 9.2****
 
 To install VDO on Red Hat Enterprise Linux 9, you need both the VDO kernel module and the userland utilities for management. Follow these steps as the root user to install the necessary components:
@@ -2136,7 +2120,7 @@ To install VDO on Red Hat Enterprise Linux 9, you need both the VDO kernel modul
  dnf install kmod-kvdo vdo lvm2 -y
  ```
 
-#### 30.3.1. Identify the Storage Block for VDO
+#### Identify the Storage Block for VDO
  Use the lsblk command to list available storage devices:
  ```
  lsblk
@@ -2158,20 +2142,20 @@ To install VDO on Red Hat Enterprise Linux 9, you need both the VDO kernel modul
  ```
  In this case, the device vdb can be used to create the necessary physical volumes (PVs) and the required volume group (VG).
 
-#### 30.3.2. Create Physical Volume (PV) and Volume Group (VG)
+#### Create Physical Volume (PV) and Volume Group (VG)
  ```
  pvcreate /dev/vdb
  vgcreate vg1 /dev/vdb
  ```
 
-#### 30.3.3. Create a VDO Volume
+#### Create a VDO Volume
 VDO currently supports any logical size up to 254 times the size of the physical volume with an absolute maximum logical size of 4PB.
  Use the lvcreate command to create a VDO volume named vdo1:
  ```
  lvcreate --type vdo --name vdo1 --size 1TB --virtualsize 10TB vg1
  ```
 
-#### 30.3.4. Create the Required VDO File System
+#### Create the Required VDO File System
  For an XFS file system, run:
  ```
  mkfs.xfs /dev/vg1/vdo1
@@ -2181,7 +2165,7 @@ VDO currently supports any logical size up to 254 times the size of the physical
  mkfs.ext4 /dev/vg1/vdo1
  ```
 
-#### 30.3.5. Mount the LVM-VDO Volume
+#### Mount the LVM-VDO Volume
  First, create a mount point:
  ```
  mkdir /mnt/vdo_mount_point
@@ -2191,7 +2175,7 @@ VDO currently supports any logical size up to 254 times the size of the physical
  mount /dev/vg1/vdo1 /mnt/vdo_mount_point
  ```
 
-#### 30.3.6. Make the Changes Persistent
+#### Make the Changes Persistent
  Edit the /etc/fstab file to ensure the VDO volume is mounted at boot:
  ```
  vi /etc/fstab
@@ -2206,7 +2190,7 @@ VDO currently supports any logical size up to 254 times the size of the physical
  ```
  Save and exit the file.
 
-#### 30.3.7. Verify VDO Status
+#### Verify VDO Status
  Run the vdostats command to verify the VDO setup:
  ```
  vdostats
@@ -2215,7 +2199,7 @@ VDO currently supports any logical size up to 254 times the size of the physical
 ___
 
 
-## 31. Boot Process
+## Boot Process
 |Step1|Step2|Step3|Step4|Step5|Step6|
 |-|-|-|-|-|-|
 |BIOS||||||
@@ -2225,7 +2209,7 @@ ___
 |->|->|->|->|Kernal||
 |->|->|->|->|->|systemd|
 
-## 32. Systemd Targets
+## Systemd Targets
 * systemd is the 1st linux process (id 1)
 * run levels = targets
 * most common, market with `*`
@@ -2251,14 +2235,14 @@ ___
 | `basic.target`        | Minimal system state that includes basic services like logging and system messaging, required by most higher-level targets. |
 | `network.target`      | Indicates that networking should be configured and active. Services that require networking depend on this target. |
 
-### 32.1. Check current target
+### Check current target
 ```
 [root@centos1 ~]# systemctl get-default
 multi-user.target
 
 ```
 
-### 32.2. Targets can have dependancies
+### Targets can have dependancies
 ```
 [root@centos1 ~]# systemctl list-dependencies graphical.target|grep -i target
 graphical.target
@@ -2283,7 +2267,7 @@ graphical.target
 ●       └─remote-fs-pre.target
 ```
 
-### 32.3. Display which runlevel is linked to which targets
+### Display which runlevel is linked to which targets
 ```
 [root@centos1 ~]# ls -l /lib/systemd/system/runlevel*
 lrwxrwxrwx. 1 root root 15 Jun 19 11:35 /lib/systemd/system/runlevel0.target -> poweroff.target
@@ -2295,7 +2279,7 @@ lrwxrwxrwx. 1 root root 16 Jun 19 11:35 /lib/systemd/system/runlevel5.target -> 
 lrwxrwxrwx. 1 root root 13 Jun 19 11:35 /lib/systemd/system/runlevel6.target -> reboot.target
 ```
 
-### 32.4. Change default target
+### Change default target
 
 ```
 [root@centos1 ~]# systemctl set-default graphical.target
@@ -2319,7 +2303,7 @@ Created symlink /etc/systemd/system/default.target → /usr/lib/systemd/system/m
 multi-user.target
 ```
 ___
-### 32.5. Enable grub to log in debug
+### Enable grub to log in debug
 ```
 vi /etc/default/grub
   GRUB_CMDLINE_LINUX="... debug"
@@ -2329,7 +2313,7 @@ init 6
 ```
 
 ___
-## 33. Repair file system corruption
+## Repair file system corruption
 * Common types of corruption
 
  Problem |Result|
@@ -2341,14 +2325,14 @@ ___
 
 ___
 
-## 34. Firewalld
+## Firewalld
 
 - - <b>Tables</b>: Collections of rules organized by their purpose (filtering, NAT, etc.).
 - - <b>Chains</b>: Ordered sets of rules within tables that process packets at different stages.
 - - <b>Rules</b>: Specific conditions and actions defined for how packets should be handled.
 - - <b>Targets</b>: The actions taken when a packet matches a rule (e.g., ACCEPT, REJECT, DROP).
 
-### 34.1. Install
+### Install
 ```
 yum install firewalld -y
 systemctl enable firewalld
@@ -2375,13 +2359,13 @@ public (active)
   rich rules:
 ```
 
-### 34.2. Get predifined services that can be referenced to enable / disable
+### Get predifined services that can be referenced to enable / disable
 ```
 [root@centos2 deltaforce]# firewall-cmd --get-services
 RH-Satellite-6 RH-Satellite-6-capsule afp amanda-client amanda-k5-client amqp amqps apcupsd audit ausweisapp2 bacula bacula-client bareos-director bareos-filedaemon bareos-storage bb bgp bitcoin bitcoin-rpc bitcoin-testnet bitcoin-testnet-rpc bittorrent-lsd ceph ceph-exporter ceph-mon cfengine checkmk-agent cockpit collectd condor-collector cratedb ctdb dds dds-multicast dds-unicast dhcp dhcpv6 dhcpv6-client distcc dns dns-over-tls docker-registry docker-swarm dropbox-lansync elasticsearch etcd-client etcd-server finger foreman foreman-proxy freeipa-4 freeipa-ldap freeipa-ldaps freeipa-replication freeipa-trust ftp galera ganglia-client ganglia-master git gpsd grafana gre high-availability http http3 https ident imap imaps ipfs ipp ipp-client ipsec irc ircs iscsi-target isns jenkins kadmin kdeconnect kerberos kibana klogin kpasswd kprop kshell kube-api kube-apiserver kube-control-plane kube-control-plane-secure kube-controller-manager kube-controller-manager-secure kube-nodeport-services kube-scheduler kube-scheduler-secure kube-worker kubelet kubelet-readonly kubelet-worker ldap ldaps libvirt libvirt-tls lightning-network llmnr llmnr-client llmnr-tcp llmnr-udp managesieve matrix mdns memcache minidlna mongodb mosh mountd mqtt mqtt-tls ms-wbt mssql murmur mysql nbd nebula netbios-ns netdata-dashboard nfs nfs3 nmea-0183 nrpe ntp nut openvpn ovirt-imageio ovirt-storageconsole ovirt-vmconsole plex pmcd pmproxy pmwebapi pmwebapis pop3 pop3s postgresql privoxy prometheus prometheus-node-exporter proxy-dhcp ps2link ps3netsrv ptp pulseaudio puppetmaster quassel radius rdp redis redis-sentinel rpc-bind rquotad rsh rsyncd rtsp salt-master samba samba-client samba-dc sane sip sips slp smtp smtp-submission smtps snmp snmptls snmptls-trap snmptrap spideroak-lansync spotify-sync squid ssdp ssh steam-streaming svdrp svn syncthing syncthing-gui syncthing-relay synergy syslog syslog-tls telnet tentacle tftp tile38 tinc tor-socks transmission-client upnp-client vdsm vnc-server warpinator wbem-http wbem-https wireguard ws-discovery ws-discovery-client ws-discovery-tcp ws-discovery-udp wsman wsmans xdmcp xmpp-bosh xmpp-client xmpp-local xmpp-server zabbix-agent zabbix-server zerotier
 ```
 
-### 34.3. Get Zones and rules
+### Get Zones and rules
 ```
 [root@centos2 deltaforce]# firewall-cmd --get-zones
 block dmz drop external home internal nm-shared public trusted work
@@ -2410,7 +2394,7 @@ public (active)
   rich rules:
 ```
 
-### 34.4. Add a service temporarily
+### Add a service temporarily
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 ~]# firewall-cmd --add-service=http
 success
@@ -2455,13 +2439,13 @@ public (active)
   rich rules:
 ```
 ___
-### 34.5. Add a service Permanantly
+### Add a service Permanantly
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 ~]# firewall-cmd --add-service=http --permanent
 success
 ```
 ___
-### 34.6. Add 3rd Party Service
+### Add 3rd Party Service
 Here we will create a custom service.
 
 Service definition location : 
@@ -2511,7 +2495,7 @@ public (active)
   ```
 
 ___
-### 34.7. Add a Port
+### Add a Port
 
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# firewall-cmd --add-port 1110/tcp --permanent
@@ -2535,7 +2519,7 @@ public (active)
 ```
 
 ___
-### 34.8. Regect incomming connection from an IP
+### Regect incomming connection from an IP
 
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.0.25" reject'
@@ -2558,7 +2542,7 @@ public (active)
 	rule family="ipv4" source address="192.168.0.25" reject              <-Rich rule added
   ```
 
-### 34.9. Regect incomming connection ping traffic
+### Regect incomming connection ping traffic
 
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# firewall-cmd --add-icmp-block-inversion
@@ -2581,7 +2565,7 @@ public (active)
 	rule family="ipv4" source address="192.168.0.25" reject
 ```
 
-### 34.10. DROP outgoing traffic to a specific IP
+### DROP outgoing traffic to a specific IP
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# ping 157.240.0.35
 PING 157.240.0.35 (157.240.0.35) 56(84) bytes of data.
@@ -2601,7 +2585,7 @@ PING 157.240.0.35 (157.240.0.35) 56(84) bytes of data.
 
 ```
 
-## 35. Containers (podman)
+## Containers (podman)
 While different software, it takes in all the same command structure
 
 * <b>podman</b> - managing pods and container images
@@ -2611,14 +2595,14 @@ While different software, it takes in all the same command structure
 * <b>crun</b> - optional runtime that can be configured and gives flexibility, control and securtity for rootless containers.
 * <b>pods</b> - group of containers 
 
-### 35.1. Install
+### Install
 ```
 [root@centos]# yum install podman -y
 [root@centos]# 
 
 ```
 
-### 35.2. See what registries exist
+### See what registries exist
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman info |less
 ...
@@ -2630,7 +2614,7 @@ registries:
 ...
 ```
 
-### 35.3. Find an image
+### Find an image
 ```
 [root@centos]# podman search  --compatible httpd
 ----extract----
@@ -2639,7 +2623,7 @@ docker.io/library/httpd                                                      The
 ```
 
 
-### 35.4. Download image
+### Download image
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman pull docker.io/library/httpd
 Trying to pull docker.io/library/httpd:latest...
@@ -2660,7 +2644,7 @@ docker.io/library/httpd  latest      a49fd2c04c02  4 weeks ago  152 MB     <-dow
 ```
 
 
-### 35.5. Run container
+### Run container
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman run -dt -p 8080:80/tcp docker.io/library/httpd
 5a9362761d68f6839af6330ae6049a106c6a3ac2c0e74334978e46aeec93ee12
@@ -2673,7 +2657,7 @@ CONTAINER ID  IMAGE                           COMMAND           CREATED        S
 
 
 
-### 35.6. Stop container
+### Stop container
 ```
 [root@centos-s-1vcpu-512mb-10gb-fra1-01 services]# podman ps -a
 CONTAINER ID  IMAGE                           COMMAND           CREATED        STATUS                           PORTS                         NAMES
@@ -2683,13 +2667,13 @@ CONTAINER ID  IMAGE                           COMMAND           CREATED        S
 5a9362761d68
 ```
 
-### 35.7. Create a new container from the downloaded image
+### Create a new container from the downloaded image
 podman create --name "httpd2" docker.io/library/httpd2
 podman ps
 podman start https2
 
 
-### 35.8. Manage containers using systemd
+### Manage containers using systemd
 * Generate a unit file.
 ```
 podman generate systemd --new --files --name httpd
@@ -2698,7 +2682,7 @@ systemctl enable container-httpd.service
 systemctl start container-httpd.service
 ```
 ___
-### 35.9. Setup a local repository
+### Setup a local repository
 When mounting a volume in podman with `-v` *NOTE* the `:z` at the end;
 * When you use :z, SELinux relabels the files in such a way that both the host system and the container can access them correctly, maintaining proper security contexts.
 
@@ -2734,7 +2718,7 @@ systemctl enable container-reggy.service
 systemctl start container-local-registry.service
 ```
 
-### 35.10. Custom container
+### Custom container
 
 * Search and pull Alpine image
 
@@ -2774,7 +2758,7 @@ ___
 ___
 
 # What I still need to learn
-## 36. Create swap
+## Create swap
 * `fdisk -l`
 * `fdisk </dev/sdx>`
 * `mkswap /dev/sdx1`
@@ -2785,7 +2769,7 @@ ___
 * `swapon -s`  or `free -m`
 
 
-## 37. Turn on SELinux policy container_manage_cgroup with persistance
+## Turn on SELinux policy container_manage_cgroup with persistance
 ```
  getsebool -a|grep -i container_mana
  setsebool -P container_manage_cgroup 1
@@ -2794,16 +2778,16 @@ ___
 
 
 
-## 38. How to put grub into debug
+## How to put grub into debug
 ```
 vi /etc/default/grub
    GRUB_CMDLINE_LINUX="rd.udevc.log_priority=debug console=ttyS0,115200n8 no_timer_check net.ifnames=0 crashkernel=1G-4G:192M,4G-64G:256M,64G-:512M"
 grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
 ___
-## 39. 2 Methods to change the root password when you dont know it.
+## 2 Methods to change the root password when you dont know it.
 `-o remount,rw`  Attempt to remount an already-mounted filesystem. This is commonly used to change the mount flags for a filesystem, especially to make a readonly filesystem writable. It does not change device or mount point.
-### 39.1. How to replace root pwd the new way
+### How to replace root pwd the new way
 * Boot into console (press up|down until you can hit `e` to access the grub menu)
 * find the ^linux line `ctrl e` and add `init=/bin/bash console=tty0` to the end and hit `crtl x`
 * Check current mount `cat /proc/mounts | grep " / " `
@@ -2814,7 +2798,7 @@ ___
 * SET selinux context for /etc/shadow with `chcon system_u:object_r:shadow_t:s0 /etc/shadow`     <-  !NOT!    r_shadow_file_t
 * boot with `exec /sbin/init`
 
-### 39.2. How to replace root pwd with rd.break
+### How to replace root pwd with rd.break
 * Boot into console (press up|down until you can hit `e` to access the grub menu)
 * find the ^linux line `ctrl e` and add `rd.break console=tty0` to the end and hit `crtl x`
 * remount the root fs: `mount -o remount,rw /sysroot`
@@ -2826,13 +2810,13 @@ ___
 ___
 
 
-## 40. convert epoch to real date time
+## convert epoch to real date time
 ```
 [root@centos1 audit]# date -d @1724662763.803
 Mon Aug 26 08:59:23 AM UTC 2024
 ```
 
-## 41. ausearch | aureport
+## ausearch | aureport
 * When using this you need to use this date format:  Month/Day/Year -> because america is the world
 ```
 [root@centos1 audit]# ausearch -ts 08/26/2024 '09:00:10' -te 08/26/2024 '09:00:20'
@@ -2851,7 +2835,7 @@ type=USER_ROLE_CHANGE msg=audit(1724662817.704:96): pid=4024 uid=0 auid=0 ses=1 
 ...
 ```
 
-#### 41.1. You can search for a particular event number(95) taken from above extract
+#### You can search for a particular event number(95) taken from above extract
 * and `--interpret` makes it human readable (translates users, groups, hexes[arch] and timestamps etc.)
 
 ```
@@ -2867,7 +2851,7 @@ type=CRYPTO_KEY_USER msg=audit(08/26/2024 09:14:50.513:95) : pid=3991 uid=root a
 type=CRYPTO_KEY_USER msg=audit(08/26/2024 13:57:16.220:95) : pid=1389 uid=root auid=unset ses=unset subj=system_u:system_r:sshd_t:s0-s0:c0.c1023 msg='op=destroy kind=server fp=SHA256:08:42:b5:ad:ef:ae:6a:57:8a:d0:46:fa:6d:69:7f:33:ab:0f:d1:9c:03:62:f3:ba:ad:a7:ea:d3:56:fd:3d:73 direction=? spid=1389 suid=root  exe=/usr/sbin/sshd hostname=? addr=? terminal=? res=success'
 ```
 
-#### 41.2. aureport with a full day windows to get a summary of the day
+#### aureport with a full day windows to get a summary of the day
 ```
 [root@centos1 audit]# aureport -ts 08/26/2024 '00:00:00' -te 08/26/2024 '23:59:59'
 
@@ -2900,7 +2884,7 @@ Number of process IDs: 2785
 Number of events: 11559
 ```
 
-#### 41.3. identify all audit events where any SELinux denials and unauthorized access attempts occured
+#### identify all audit events where any SELinux denials and unauthorized access attempts occured
 
 * The AVC in SELinux is a performance-enhancing component that caches access control decisions, reducing the need to re-evaluate policies for repeated access requests. It is also an important part of SELinux logging, helping administrators understand and troubleshoot access denials. see (ausearch)
 ```
@@ -2916,7 +2900,7 @@ type=AVC msg=audit(1724716801.929:8313): avc:  denied  { getattr } for  pid=4145
 ```
 
 
-## 42. Adding files to all users created
+## Adding files to all users created
 ```
 [root@rhel ~]# cat /etc/default/useradd
 # useradd defaults file
@@ -2941,7 +2925,7 @@ total 0
 -rw-r--r--. 1 aryan aryan 0 Aug 28 15:22 YouDaWinna
 ```
 
-## 43. Activating a service in firewalld
+## Activating a service in firewalld
 ```
 [root@centos1 tmp]# firewall-cmd  --get-services
 * * * * ssh * * * * <long list>
@@ -2959,7 +2943,7 @@ success
 cockpit dhcpv6-client ssh
 ```
 
-## 44. Change Keyboard to swiss german
+## Change Keyboard to swiss german
 ```
 [root@localhost ~]# localectl status
 System Locale: LANG=en_GB.UTF-8
@@ -2972,7 +2956,7 @@ System Locale: LANG=en_GB.UTF-8
 [root@localhost ~]# reboot
 ```
 
-## 45. Sctipting notes
+## Scripting notes
 * With Scripting, make sure that when comparing string that both string and var are quoted ! `" "`
 ```
 #!/bin/bash
@@ -3011,7 +2995,7 @@ esac
 [root@localhost tmp]# find /tmp -type f -empty -delete
 ```
 
-## 46. tar using bzip and then extract the data to dir /restore
+## tar using bzip and then extract the data to dir /restore
 ```
 tar cvfpj /backup/newetc.tar.bz2 /etc
 
@@ -3021,14 +3005,14 @@ tar xvfj  /backup/newetc.tar.bz2 -C /restore
 
 
 
-## 47. Prohibit root login over ssh
+## Prohibit root login over ssh
 ```
 vi /etc/ssh/sshd_config
 PermitRootLogin yes
 systemctl restart sshd
 ```
 
-## 48. Troubleshooting systemd
+## Troubleshooting systemd
 * Make sure the service file has `664` permission :
 
       chmod 644 /etc/systemd/system/container-reggy.service
@@ -3054,8 +3038,8 @@ systemctl restart sshd
 * Make sure to do a `systemctl daemon-reload` after any changes and check the status with:
 `systemctl list-unit-files | grep container-reggy`
 
-## 49. Setup Centralized logging
-### 49.1. Log Server
+## Setup Centralized logging
+### Log Server
 
 * Enable TCP 
 ```
@@ -3078,7 +3062,7 @@ systemctl enable rsyslog
 
 
 
-### 49.2. Sender Server
+### Sender Server
 * Add to /etc/rsyslog.conf
 ```
 module(load="imtcp") 
@@ -3099,12 +3083,12 @@ systemctl restart rsyslog
 systemctl enable rsyslog
 ```
 
-### 49.3. Tail to see if you see the log entries on the log Server
+### Tail to see if you see the log entries on the log Server
 ```
 tail -f /var/log/messages
 ```
 
-### 49.4. usr creation scrpt
+### usr creation scrpt
 ```
 #!/bin/bash
 
@@ -3113,10 +3097,10 @@ echo "password" | passwd --stdin testuser
 ```
 
 
-## 50. Tuned
+## Tuned
 * Tuned is a dynamic adaptive system tuning tool that optimizes the performance of a system based on specific workload profiles. It automatically adjusts system settings such as CPU frequency scaling, disk I/O, and kernel parameters to match the workload and environment. This tool is especially useful for ensuring performance in different usage scenarios like virtual machines, servers, and desktops.
 
-### 50.1. To list the profiles
+### To list the profiles
 ```
 [root@rh21 tuned]# tuned-adm list
 Available profiles:
@@ -3129,19 +3113,19 @@ Available profiles:
 ...
 ```
 
-### 50.2. Apply Profile
+### Apply Profile
 ```
 [root@rh21 tuned]# tuned-adm profile throughput-performance
 [root@rh21 tuned]#
 ```
 
-### 50.3. Check active profile
+### Check active profile
 ```
 [root@rh21 tuned]# tuned-adm active
 Current active profile: throughput-performance 
 ```
 
-### 50.4. Create custom profile
+### Create custom profile
 * Create a custom profile and inherit the throughput-performance profile and then add further tuning.
 ```
 cp -r /usr/lib/tuned/<profile-name> /etc/tuned/my-custom-profile
@@ -3160,15 +3144,15 @@ energy_perf_bias=performance
 readahead=4096
 ```
 
-## 51. Script concepts
+## Script concepts
 
-### 51.1. Overview
+### Overview
 * Use `[[ ... ]]` when working with regular expressions or other advanced comparisons in bash.
 * Use `[ ]` (or test) for basic checks like file existence, string equality, and numeric comparisons, but not for regular expressions. Simple test conditions
 * Use `$(( ... ))` for Bash Arithmetic 
 * Use `$(...)` execute a command like ls and capture its output
 
-### 51.2. Using RegEx to check if a var is an INT:
+### Using RegEx to check if a var is an INT:
 * `=~`is a regular expression operator
 * The reason why `"$1"` needs to be enclosed in double quotes is to handle cases where the input contains spaces, special characters, or is empty. Quoting ensures that the value is treated as a single argument.
 ```
@@ -3178,7 +3162,7 @@ is_integer() {
 }
 ```
 
-### 51.3. Passing a var into a Function
+### Passing a var into a Function
 * You do not use `[ ... ]` because `[ ]` is used for evaluating conditions with operators like -f (file checks), -z (string checks), and arithmetic comparisons,  <b>but not for directly calling functions. You cannot call a function inside `[ ]`!</b>
 ```
 #!/bin/bash
@@ -3208,21 +3192,21 @@ echo " your answer is $ans"
 ```
 
 
-## 52. Locking a user account
-### 52.1. lock an account from being logged in (still avail to root/ and user if pubkey is setup)
+## Locking a user account
+### lock an account from being logged in (still avail to root/ and user if pubkey is setup)
 ```
 usermod -L <username>
 
 passwd -l <username>
 ```
 
-### 52.2. lock an account from being logged in (ONLY avail to root)
+### lock an account from being logged in (ONLY avail to root)
 ```
 chage -E 0 <username>
 ```
 
-## 53. Sudoers
-### 53.1. Grant sudo privileges a new user caladin
+## Sudoers
+### Grant sudo privileges a new user caladin
 The wheel group is typically used to grant full sudo privileges to users. If you only want the user caladin to have permission to run a single command then you don't need to add them to the wheel group.
 
 `useradd caladin`
@@ -3237,7 +3221,7 @@ The wheel group is typically used to grant full sudo privileges to users. If you
 
 `chmod 440 /etc/sudoers.d/caladin`
 ___
-## 54. sticky bits and SETUID and SETGID bits
+## sticky bits and SETUID and SETGID bits
 How i make sence of it 
 ||||
 |-|-|-|
@@ -3254,44 +3238,44 @@ How i make sence of it
 
 
 
-### 54.1. Sticky bit
+### Sticky bit
 The sticky bit is used on directories to control file deletion. When set on a directory, it ensures that only the file's owner, the directory's owner, or root can delete or rename the files within the directory, even if others have write permissions to the directory.
 
-#### 54.1.1. Apperance
+#### Apperance
 `drwxrwxrwt  17 root root  4096 Sep 10 10:00 /tmp`
 
-#### 54.1.2. Apply
+#### Apply
 `chmod +t /path/to/directory` OR 
 `chmod 1777 /path/to/directory`
 
-#### 54.1.3. Remove
+#### Remove
 `chmod -t /path/to/directory` OR `chmod 0777 /path/to/directory`
 ___
 
-### 54.2. SETUID
+### SETUID
 The SETUID permission allows a user to execute a file with the permissions of the file owner, typically root. This is often used for programs that need elevated privileges to perform certain tasks, even when run by regular users.
 It looks like this:
 
-#### 54.2.1. Apperance
+#### Apperance
 `-rwsr-xr-x. 1 root root 69296 Aug 11  2021 /usr/bin/passwd`
 
-#### 54.2.2. Apply
+#### Apply
 `chmod u+s /path/to/program` OR `chmod 4755 /path/to/program`
 
-#### 54.2.3. Remove
+#### Remove
 `chmod u-s /path/to/program` OR `chmod 0755 /path/to/program`
 ___
 
-### 54.3. SETGID
+### SETGID
 The SETGID bit behaves differently for files and directories:
 
 * <b>For files</b>, it causes the file to be executed with the group permissions of the file's owner, rather than the group of the user running the file.
 * <b>For directories</b>, it causes files created within the directory to inherit the group ownership of the directory, rather than the group of the user creating the file.
 
-#### 54.3.1. Apperance
+#### Apperance
 `drwxrwsr-x  2 root staff 4096 Sep 10 18:00 /shared-directory`
 
-#### 54.3.2. Apply
+#### Apply
 `chmod g+s /path/to/file`     
 
 `chmod g+s /path/to/directory` 
@@ -3300,7 +3284,7 @@ The SETGID bit behaves differently for files and directories:
 
 `chmod 2755 /path/to/directory`  
 
-#### 54.3.3. Remove
+#### Remove
 `chmod g-s /path/to/file`                 
 
 `chmod g-s /path/to/file_or_directory`    
@@ -3309,31 +3293,31 @@ The SETGID bit behaves differently for files and directories:
 
 `chmod 0755 /path/to/directory`
 
-## 55. Nuances with permissioning
-### 55.1. Write Permissions on a Directory (Without Execute):
+## Nuances with permissioning
+### Write Permissions on a Directory (Without Execute):
 If you have write permission on a directory but lack execute, you can create new files or delete existing ones, but you won’t be able to actually open or list the files.
 This is an odd situation because, while you can technically manage files, you can’t interact with them meaningfully without the execute permission.
 Example:
 
 You can `rm` files by name, but not `ls` to see them.
 
-### 55.2. Removing Execute Permission from a Directory Disables Navigation:
+### Removing Execute Permission from a Directory Disables Navigation:
 If you remove the execute permission from a directory, even users with read permission won’t be able to cd into it, nor will they be able to access any files in it directly (even if they know the filenames). You need execute on a dir to navigate into it.
 
-### 55.3. Symbolic Link Permissions:
+### Symbolic Link Permissions:
 Permissions on symbolic links themselves are largely ignored. What matters is the permissions of the file the symlink points to.
 However, you must have execute permission on the directory containing the symlink to follow it.
 
-### 55.4. Umask Influencing Default Permissions:
+### Umask Influencing Default Permissions:
 The umask defines the default permissions for new files and directories. It subtracts from the system's base permissions.
 
-#### 55.4.1. DEFUALT
+#### DEFUALT
 By default, files and directories in Linux are created with a base permission set:
 
 * <b><u>For files</b></u>, the default maximum permission is <b><u>666</b></u> (read and write for owner, group, and others). Files typically do not get execute (x) permissions by default because regular files are not executable unless specified.
 * <b><u>For directories</b></u>, the default maximum permission is <b><u>777</b></u> (read, write, and execute for owner, group, and others). Directories, however, require execute permission to be accessible (to cd into).
 
-#### 55.4.2. Understading how umask works
+#### Understading how umask works
 | `umask` | File Permissions (`666 - umask`) | Directory Permissions (`777 - umask`) |
 |---------|----------------------------------|---------------------------------------|
 | `0000`  | `666` (rw-rw-rw-)                | `777` (rwxrwxrwx)                     |
@@ -3343,14 +3327,14 @@ By default, files and directories in Linux are created with a base permission se
 
 For example, a umask of 0022 will result in default file permissions of 644 (owner can read/write, others can only read) and directory permissions of 755 (owner can read/write/execute, others can only read/execute).
 
-#### 55.4.3. Apply
+#### Apply
 ```
 $ umask
 0022
 $ umask 0077
 ```
 
-#### 55.4.4. How i calculate
+#### How i calculate
 ```
 421  format
 rwx
@@ -3366,8 +3350,8 @@ rwx
 ___
 
 
-## 56. RAID
-### 56.1. Overview
+## RAID
+### Overview
 | **RAID Level**       | **Disks Required** | **Fault Tolerance**                                 | **Performance**         | **Use Case**                        |
 |----------------------|-------------------|-----------------------------------------------------|-------------------------|--------------------------------------|
 | **RAID 0 (Striping)**| 2+                | None                                                | High read/write speed    | Temporary, non-critical data         |
@@ -3376,7 +3360,7 @@ ___
 | **RAID 6 (Striping with Double Parity)**| 4+| Can lose 2 disks                                    | Good read, slower write  | Large storage systems                |
 | **RAID 10 (Mirroring and Striping)**| 4+  | Multiple disk failures (one per mirrored pair)       | High read/write speed    | High-performance, mission-critical systems |
 
-### 56.2. Setup RAID 0 (striping)
+### Setup RAID 0 (striping)
 
 ```
 [root@rh21 ~]# lsblk
@@ -3423,7 +3407,7 @@ Writing superblocks and filesystem accounting information: done
 [root@rh21 ~]# touch /mnt/raid0/file1
 ```
 
-### 56.3. Setup RAID 1 (Mirroring)
+### Setup RAID 1 (Mirroring)
 
 ```
 [root@rh21 ~]# mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/vde /dev/vdf
@@ -3466,7 +3450,7 @@ Writing superblocks and filesystem accounting information: done
 
 [root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
 ```
-#### 56.3.1. Mark drive as faulty
+#### Mark drive as faulty
 ```
 [root@rh21 ~]# lsblk
 NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
@@ -3526,7 +3510,7 @@ vdh           252:112  0    5G  0 disk
 [root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
 ````
 
-### 56.4. Setup RAID 5 (Striping with Parity)
+### Setup RAID 5 (Striping with Parity)
 
 ```
 [root@rh21 ~]# mdadm --create /dev/md5 --level=5 --raid-devices=3 /dev/vd[hif]
@@ -3567,52 +3551,52 @@ Writing superblocks and filesystem accounting information: done
 [root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
 ```
 
-## 57. journal
+## journal
 By default the journals are volatile(stored in memory), to persist then you can wither edit the `/etc/systemd/journald.conf` file or 
-### 57.1. Config
+### Config
 `/etc/systemd/journald.conf`
 
-### 57.2. Basic Usage
+### Basic Usage
 `journalctl` is a command-line tool used to view and query logs collected by `systemd-journald`. It allows you to inspect system logs, service logs, kernel logs, and more.
 
-#### 57.2.1. To view all logs reverse order:
+#### To view all logs reverse order:
 `journalctl -r`
 ___
-#### 57.2.2. follow logs
+#### follow logs
 `journalctl -f`
 ___
-#### 57.2.3. boot up logs
+#### boot up logs
 `journalctl -b`
 ___
-#### 57.2.4. boot up logs - For the previous boot
+#### boot up logs - For the previous boot
 `journalctl -b -1`
 ___
-#### 57.2.5. Filter by time
+#### Filter by time
 `journalctl --since "2024-09-01" --until "2024-09-02"`
 ___
-#### 57.2.6. filter by service
+#### filter by service
 `journalctl -u <service_name>`
 ___
-#### 57.2.7. filter by priority Shows logs of a specified priority (0-7)
+#### filter by priority Shows logs of a specified priority (0-7)
 `journalctl -p <priority>`
 ___
-#### 57.2.8. kernal logs
+#### kernal logs
 `journalctl -k`
 ___
-#### 57.2.9. last 50 lines
+#### last 50 lines
 `journalctl -n 50`
 ___
 
-#### 57.2.10. User or PID logs
+#### User or PID logs
 ```
 journalctl _UID=<user_id>
 journalctl _PID=<process_id>
 ```
 ___
-#### 57.2.11. Add explainer text if possible
+#### Add explainer text if possible
 `journalctl -x`
 ___
-## 58. Check the change log for a package:
+## Check the change log for a package:
 `rpm -q --changelog gcc`
 ___
 ___
@@ -3663,7 +3647,7 @@ ___
 
 
 
-## 59. TODO
+## TODO
 ||||
 |-|-|-|
 |Test4|||
