@@ -279,6 +279,11 @@ MS Name/IP address         Stratum Poll Reach LastRx Last sample
 ^- de-fra2-ntp1.level66.net>     2   6    37    11  -1146us[-1293us] +/-   32ms
 ```
 
+To force a Sync
+```
+chronyc -a 'burst 4/4'
+chronyc makestep
+```
 
 ___
 ## Manage Linux Networking
@@ -411,7 +416,7 @@ Settings for eth0:
 ___
 
 ## Setting kernel parameters at runtime
-* We use `sysctl` for this, you can also add setting to a file called `/etc/sysctl.conf` and then run `sysctl -p ` to activate the setting at runtime. 
+* We use `sysctl` for this, you can also add setting to a file called `/etc/sysctl.conf` and then run `sysctl -p ` to activate the setting at runtime. The `-p` option will reread the `/etc/sysctl.conf` file by default or you could specify ARG1 as a custom file.
 * Here we will enable ip forwarding as an example:
 
 ```
@@ -441,6 +446,42 @@ net.ipv4.ip_forward_use_pmtu = 0
 
 ```
 yum update kernel
+
+```
+
+## Set Linux to boot of index 1 in the boot menu
+```
+
+[root@test2 ~]# grubby --info=ALL
+index=0
+kernel="/boot/vmlinuz-5.14.0-427.33.1.el9_4.aarch64"
+args="ro crashkernel=1G-4G:256M,4G-64G:320M,64G-:576M rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap"
+root="/dev/mapper/rhel-root"
+initrd="/boot/initramfs-5.14.0-427.33.1.el9_4.aarch64.img $tuned_initrd"
+title="Red Hat Enterprise Linux (5.14.0-427.33.1.el9_4.aarch64) 9.4 (Plow)"
+id="bdbcb356d2574e5b835bd5d17bcd1f0d-5.14.0-427.33.1.el9_4.aarch64"
+index=1
+kernel="/boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d"
+args="ro crashkernel=1G-4G:256M,4G-64G:320M,64G-:576M rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap"
+root="/dev/mapper/rhel-root"
+initrd="/boot/initramfs-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d.img"
+title="Red Hat Enterprise Linux (0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d) 9.4 (Plow)"
+id="bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue"
+
+[root@test2 ~]# grubby --set-default-index=1
+The default is /boot/loader/entries/bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue.conf with index 1 and kernel /boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d
+
+[root@test2 ~]# grubby --default-kernel
+/boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d
+
+# This doesn't seem to be neccessary anymore !!
+#[root@test2 ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
+#Generating grub configuration file ...
+#Adding boot menu entry for UEFI Firmware Settings ...
+#done
+#
+
+[root@test2 ~]# reboot
 
 ```
 
@@ -1900,6 +1941,114 @@ systemctl restart nmb
 ___
 
 
+## VDO 
+VDO (Virtual Data Optimizer) is a storage optimization technology designed to 
+* reduce the actual amount of data stored on physical storage devices by using techniques like deduplication and compression. 
+* VDO allows you to create logical volumes that are much larger than the actual physical space they occupy on the disk. 
+
+### Key Features of VDO:
+| Purpose | description |
+|-|-|
+|Deduplication|VDO automatically identifies and removes duplicate copies of data at the block level. If identical blocks of data are written more than once, only one copy is stored, while the others are referenced to the original.|
+|Compression|VDO applies inline compression to the data, reducing the physical storage requirements even further. Compression is done before the data is written to disk, helping save space immediately.|
+|Thin Provisioning|VDO allows the creation of logical volumes that appear larger than the available physical storage (logical size). The actual physical storage is consumed only as data is written, so users can provision large volumes without immediately using up all physical space.|
+|Space Efficiency|By combining deduplication, compression, and thin provisioning, VDO enables you to store more data in less physical space, optimizing the utilization of storage resources.|
+
+### Use cases of VDO:
+| Use Case | description |
+|-|-|
+|Backup and Archival Storage|VDO can reduce the size of backups by eliminating duplicate data across multiple backups, especially useful for long-term retention.|
+|Virtual Machine (VM) and Container Storage:|In environments where multiple VMs or containers may contain similar or identical data, VDO can help optimize storage by eliminating redundant data.|
+|General Purpose Storage|It can also be used for any kind of general-purpose storage, where space optimization is a priority.|
+
+
+### Setup
+***WORKS ONLY ON REHEL 9.4, maybe 9.3, not on 9.2****
+
+To install VDO on Red Hat Enterprise Linux 9, you need both the VDO kernel module and the userland utilities for management. Follow these steps as the root user to install the necessary components:
+ ```
+ dnf install kmod-kvdo vdo lvm2 -y
+ ```
+
+#### 2. Identify the Storage Block for VDO
+ Use the lsblk command to list available storage devices:
+ ```
+ lsblk
+ ```
+ Example output:
+ ```
+ NAME MAJ:MIN RM SIZE RO TYPE MOUNTPOINTS
+ sda 8:0 0 1G 0 disk 
+ sr0 11:0 1 1024M 0 rom 
+ vda 252:0 0 18G 0 disk 
+ ├─vda1 252:1 0 1G 0 part /boot
+ ├─vda2 252:2 0 7G 0 part 
+ │ ├─rhel-root 253:0 0 5.2G 0 lvm /
+ │ └─rhel-swap 253:1 0 1.8G 0 lvm [SWAP]
+ └─vda3 252:3 0 2G 0 part 
+ ├─testvg-testlv 253:2 0 1.5G 0 lvm 
+ └─testvg-kdumplv 253:3 0 100M 0 lvm /kdump
+ vdb 252:16 0 5G 0 disk 
+ ```
+ In this case, the device vdb can be used to create the necessary physical volumes (PVs) and the required volume group (VG).
+
+#### 3. Create Physical Volume (PV) and Volume Group (VG)
+ ```
+ pvcreate /dev/vdb
+ vgcreate vg1 /dev/vdb
+ ```
+
+#### 4. Create a VDO Volume
+VDO currently supports any logical size up to 254 times the size of the physical volume with an absolute maximum logical size of 4PB.
+ Use the lvcreate command to create a VDO volume named vdo1:
+ ```
+ lvcreate --type vdo --name vdo1 --size 1TB --virtualsize 10TB vg1
+ ```
+
+#### 5. Create the Required VDO File System
+ For an XFS file system, run:
+ ```
+ mkfs.xfs /dev/vg1/vdo1
+ ```
+ For an ext4 file system, run:
+ ```
+ mkfs.ext4 /dev/vg1/vdo1
+ ```
+
+#### 6. Mount the LVM-VDO Volume
+ First, create a mount point:
+ ```
+ mkdir /mnt/vdo_mount_point
+ ```
+ Then mount the VDO volume:
+ ```
+ mount /dev/vg1/vdo1 /mnt/vdo_mount_point
+ ```
+
+#### 7. Make the Changes Persistent
+ Edit the /etc/fstab file to ensure the VDO volume is mounted at boot:
+ ```
+ vi /etc/fstab
+ ```
+ Add the following entry for an XFS file system:
+ ```
+ /dev/vg1/vdo1 /mnt/vdo_mount_point xfs defaults 0 0
+ ```
+ Or for an ext4 file system:
+ ```
+ /dev/vg1/vdo1 /mnt/vdo_mount_point ext4 defaults 0 0
+ ```
+ Save and exit the file.
+
+#### 8. Verify VDO Status
+ Run the vdostats command to verify the VDO setup:
+ ```
+ vdostats
+ ```
+
+___
+
+
 ## Boot Process
 |Step1|Step2|Step3|Step4|Step5|Step6|
 |-|-|-|-|-|-|
@@ -2011,34 +2160,6 @@ vi /etc/default/grub
 
 grub2-mkconfig -o /boot/grub2/grub.cfg
 init 6
-```
-
-## Recover Root Password
-
-* go to the console and reboot the server
-
-`reboot`
-
-* push `up` `down` to make the GRUB menu active. You will see your OS and a rescue version of your OS.
-
-* select the OS and hit `e` to edit 
-
-* Find the line starting with linux or linux16.
-example:
-
-`linux /vmlinuz-3.10.0-1127.el7.x86_64 root=/dev/mapper/rhel-root ro crashkernel=auto rhgb quiet`
-
-CHANGE TO THIS:
-`linux /vmlinuz-3.10.0-1127.el7.x86_64 root=/dev/mapper/rhel-root rw init=/sysroot/bin/sh crashkernel=auto rhgb quiet`
-
-* hit CTRL X -This will start in single user mode
-
-```
-chroot /sysroot
-passwd root
-touch /.autorelabel
-exit
-reboot
 ```
 
 ___
@@ -2515,6 +2636,7 @@ grub2-mkconfig -o /boot/grub2/grub.cfg
 ```
 ___
 ## 2 Methods to change the root password when you dont know it.
+`-o remount,rw`  Attempt to remount an already-mounted filesystem. This is commonly used to change the mount flags for a filesystem, especially to make a readonly filesystem writable. It does not change device or mount point.
 ### How to replace root pwd the new way
 * Boot into console (press up|down until you can hit `e` to access the grub menu)
 * find the ^linux line `ctrl e` and add `init=/bin/bash console=tty0` to the end and hit `crtl x`
@@ -2523,7 +2645,7 @@ ___
 * Check current mount `cat /proc/mounts | grep " / " ` ---> it is `rw` now
 * Check selinux context for /etc/shadow with `ls -lZ /etc/shadow` ---> take note of context
 * change pwd `passwd root`
-* SET selinux context for /etc/shadow with `chcon system_u:object_r:shadow_t:s0 /etc/shadow`
+* SET selinux context for /etc/shadow with `chcon system_u:object_r:shadow_t:s0 /etc/shadow`     <-  !NOT!    r_shadow_file_t
 * boot with `exec /sbin/init`
 
 ### How to replace root pwd with rd.break
@@ -2731,39 +2853,7 @@ tar xvfj  /backup/newetc.tar.bz2 -C /restore
 
 ```
 
-## Set Linux to boot of index 1 in the boot menu
-```
 
-[root@test2 ~]# grubby --info=ALL
-index=0
-kernel="/boot/vmlinuz-5.14.0-427.33.1.el9_4.aarch64"
-args="ro crashkernel=1G-4G:256M,4G-64G:320M,64G-:576M rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap"
-root="/dev/mapper/rhel-root"
-initrd="/boot/initramfs-5.14.0-427.33.1.el9_4.aarch64.img $tuned_initrd"
-title="Red Hat Enterprise Linux (5.14.0-427.33.1.el9_4.aarch64) 9.4 (Plow)"
-id="bdbcb356d2574e5b835bd5d17bcd1f0d-5.14.0-427.33.1.el9_4.aarch64"
-index=1
-kernel="/boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d"
-args="ro crashkernel=1G-4G:256M,4G-64G:320M,64G-:576M rd.lvm.lv=rhel/root rd.lvm.lv=rhel/swap"
-root="/dev/mapper/rhel-root"
-initrd="/boot/initramfs-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d.img"
-title="Red Hat Enterprise Linux (0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d) 9.4 (Plow)"
-id="bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue"
-
-[root@test2 ~]# grubby --set-default-index=1
-The default is /boot/loader/entries/bdbcb356d2574e5b835bd5d17bcd1f0d-0-rescue.conf with index 1 and kernel /boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d
-
-[root@test2 ~]# grubby --default-kernel
-/boot/vmlinuz-0-rescue-bdbcb356d2574e5b835bd5d17bcd1f0d
-
-[root@test2 ~]# grub2-mkconfig -o /boot/grub2/grub.cfg
-Generating grub configuration file ...
-Adding boot menu entry for UEFI Firmware Settings ...
-done
-
-[root@test2 ~]# reboot
-
-```
 
 ## Prohibit root login over ssh
 ```
@@ -2857,29 +2947,570 @@ echo "password" | passwd --stdin testuser
 ```
 
 
+## Tuned
+* Tuned is a dynamic adaptive system tuning tool that optimizes the performance of a system based on specific workload profiles. It automatically adjusts system settings such as CPU frequency scaling, disk I/O, and kernel parameters to match the workload and environment. This tool is especially useful for ensuring performance in different usage scenarios like virtual machines, servers, and desktops.
+
+### To list the profiles
+```
+[root@rh21 tuned]# tuned-adm list
+Available profiles:
+- accelerator-performance     - Throughput performance based tuning with disabled higher latency STOP states
+- aws                         - Optimize for aws ec2 instances
+- balanced                    - General non-specialized tuned profile
+- desktop                     - Optimize for the desktop use-case
+- hpc-compute                 - Optimize for HPC compute workloads
+- intel-sst                   - Configure for Intel Speed Select Base Frequency
+...
+```
+
+### Apply Profile
+```
+[root@rh21 tuned]# tuned-adm profile throughput-performance
+[root@rh21 tuned]#
+```
+
+### Check active profile
+```
+[root@rh21 tuned]# tuned-adm active
+Current active profile: throughput-performance 
+```
+
+### Create custom profile
+* Create a custom profile and inherit the throughput-performance profile and then add further tuning.
+```
+cp -r /usr/lib/tuned/<profile-name> /etc/tuned/my-custom-profile
+tuned-adm profile my-custom-profile
+
+cat  /etc/tuned/my-custom-profile/tuned.conf
+[main]
+summary=My Custom Profile
+include=throughput-performance
+
+[cpu]
+governor=performance
+energy_perf_bias=performance
+
+[disk]
+readahead=4096
+```
+
+## Script concepts
+
+### Overview
+* Use `[[ ... ]]` when working with regular expressions or other advanced comparisons in bash.
+* Use `[ ]` (or test) for basic checks like file existence, string equality, and numeric comparisons, but not for regular expressions. Simple test conditions
+* Use `$(( ... ))` for Bash Arithmetic 
+* Use `$(...)` execute a command like ls and capture its output
+
+### Using RegEx to check if a var is an INT:
+* `=~`is a regular expression operator
+* The reason why `"$1"` needs to be enclosed in double quotes is to handle cases where the input contains spaces, special characters, or is empty. Quoting ensures that the value is treated as a single argument.
+```
+# Function to check if a value is an integer
+is_integer() {
+    [[ "$1" =~ ^-?[0-9]+$ ]]
+}
+```
+
+### Passing a var into a Function
+* You do not use `[ ... ]` because `[ ]` is used for evaluating conditions with operators like -f (file checks), -z (string checks), and arithmetic comparisons,  <b>but not for directly calling functions. You cannot call a function inside `[ ]`!</b>
+```
+#!/bin/bash
+
+checkint() {
+  [[ "$1" =~ ^-?[0-9]+$  ]]
+}
+
+echo  "Enter first INT: "
+read intone
+if ! checkint $intone
+then
+  echo "$intone is not an INT!"
+  exit 1
+fi
+
+echo  "Enter second INT: "
+read inttwo
+if ! checkint $inttwo
+then
+  echo "$inttwo is not an INT!"
+  exit 1
+fi
+
+ans=$(( $intone + $inttwo ))
+echo " your answer is $ans"
+```
+
+
+## Locking a user account
+### lock an account from being logged in (still avail to root/ and user if pubkey is setup)
+```
+usermod -L <username>
+
+passwd -l <username>
+```
+
+### lock an account from being logged in (ONLY avail to root)
+```
+chage -E 0 <username>
+```
+
+## Sudoers
+### Grant sudo privileges a new user caladin
+The wheel group is typically used to grant full sudo privileges to users. If you only want the user caladin to have permission to run a single command then you don't need to add them to the wheel group.
+
+`useradd caladin`
+
+`passwd caladin`
+
+`echo 'caladin ALL=(ALL)           ALL'               | sudo tee /etc/sudoers.d/caladin` * User must type in their passwd
+
+`echo 'caladin ALL=(ALL)  NOPASSWD:ALL'               | sudo tee /etc/sudoers.d/caladin` * User does <u><b>not need</b></u> to type in their passwd
+
+`echo 'caladin ALL=(root) NOPASSWD:/usr/sbin/tcpdump' | sudo tee /etc/sudoers.d/caladin` * User can <u><b>only</u></b> run the tcpdump command with sudo
+
+`chmod 440 /etc/sudoers.d/caladin`
+___
+## sticky bits and SETUID and SETGID bits
+How i make sence of it 
+||||
+|-|-|-|
+|r|w|x|
+|4|2|1|
+|UID|GID|sticky|
+|-rw<u><b>s</b></u> r-x r-x|drwx rw<u><b>s </b></u>r-x|drwx rwx rw<u><b>t</b></u>|
+
+|Bit|Purpose|
+|-|-|
+|1|represents sticky bit.|
+|2| represents SETGID.|
+|4| represents SETUID.|
+
+
+
+### Sticky bit
+The sticky bit is used on directories to control file deletion. When set on a directory, it ensures that only the file's owner, the directory's owner, or root can delete or rename the files within the directory, even if others have write permissions to the directory.
+
+#### Apperance
+`drwxrwxrwt  17 root root  4096 Sep 10 10:00 /tmp`
+
+#### Apply
+`chmod +t /path/to/directory` OR 
+`chmod 1777 /path/to/directory`
+
+#### Remove
+`chmod -t /path/to/directory` OR `chmod 0777 /path/to/directory`
+___
+
+### SETUID
+The SETUID permission allows a user to execute a file with the permissions of the file owner, typically root. This is often used for programs that need elevated privileges to perform certain tasks, even when run by regular users.
+It looks like this:
+
+#### Apperance
+`-rwsr-xr-x. 1 root root 69296 Aug 11  2021 /usr/bin/passwd`
+
+#### Apply
+`chmod u+s /path/to/program` OR `chmod 4755 /path/to/program`
+
+#### Remove
+`chmod u-s /path/to/program` OR `chmod 0755 /path/to/program`
+___
+
+### SETGID
+The SETGID bit behaves differently for files and directories:
+
+* <b>For files</b>, it causes the file to be executed with the group permissions of the file's owner, rather than the group of the user running the file.
+* <b>For directories</b>, it causes files created within the directory to inherit the group ownership of the directory, rather than the group of the user creating the file.
+
+#### Apperance
+`drwxrwsr-x  2 root staff 4096 Sep 10 18:00 /shared-directory`
+
+#### Apply 
+`chmod g+s /path/to/file`     
+
+`chmod g+s /path/to/directory` 
+
+`chmod 2755 /path/to/file`   
+
+`chmod 2755 /path/to/directory`  
+
+#### Remove
+`chmod g-s /path/to/file`                 
+
+`chmod g-s /path/to/file_or_directory`    
+
+`chmod 0755 /path/to/file`   
+
+`chmod 0755 /path/to/directory`
+
+## Nuances with permissioning
+### Write Permissions on a Directory (Without Execute):
+If you have write permission on a directory but lack execute, you can create new files or delete existing ones, but you won’t be able to actually open or list the files.
+This is an odd situation because, while you can technically manage files, you can’t interact with them meaningfully without the execute permission.
+Example:
+
+You can `rm` files by name, but not `ls` to see them.
+
+### Removing Execute Permission from a Directory Disables Navigation:
+If you remove the execute permission from a directory, even users with read permission won’t be able to cd into it, nor will they be able to access any files in it directly (even if they know the filenames). You need execute on a dir to navigate into it.
+
+### Symbolic Link Permissions:
+Permissions on symbolic links themselves are largely ignored. What matters is the permissions of the file the symlink points to.
+However, you must have execute permission on the directory containing the symlink to follow it.
+
+### Umask Influencing Default Permissions:
+The umask defines the default permissions for new files and directories. It subtracts from the system's base permissions.
+
+#### DEFUALT
+By default, files and directories in Linux are created with a base permission set:
+
+* <b><u>For files</b></u>, the default maximum permission is <b><u>666</b></u> (read and write for owner, group, and others). Files typically do not get execute (x) permissions by default because regular files are not executable unless specified.
+* <b><u>For directories</b></u>, the default maximum permission is <b><u>777</b></u> (read, write, and execute for owner, group, and others). Directories, however, require execute permission to be accessible (to cd into).
+
+#### Understading how umask works
+| `umask` | File Permissions (`666 - umask`) | Directory Permissions (`777 - umask`) |
+|---------|----------------------------------|---------------------------------------|
+| `0000`  | `666` (rw-rw-rw-)                | `777` (rwxrwxrwx)                     |
+| `0022`  | `644` (rw-r--r--)                | `755` (rwxr-xr-x)                     |
+| `0002`  | `664` (rw-rw-r--)                | `775` (rwxrwxr-x)                     |
+| `0077`  | `600` (rw-------)                | `700` (rwx------)                     |
+
+For example, a umask of 0022 will result in default file permissions of 644 (owner can read/write, others can only read) and directory permissions of 755 (owner can read/write/execute, others can only read/execute).
+
+#### Apply
+```
+$ umask
+0022
+$ umask 0077
+```
+
+#### How i calculate
+```
+421  format
+rwx
+
+ 666  for files
+-027  umask
+=640  result
+
+ 777  for dirs
+-027  umask
+=750  result
+```
+___
+
+
+## RAID 
+### Overview
+| **RAID Level**       | **Disks Required** | **Fault Tolerance**                                 | **Performance**         | **Use Case**                        |
+|----------------------|-------------------|-----------------------------------------------------|-------------------------|--------------------------------------|
+| **RAID 0 (Striping)**| 2+                | None                                                | High read/write speed    | Temporary, non-critical data         |
+| **RAID 1 (Mirroring)**| 2                | Can lose 1 disk                                     | Good read, same write    | OS, critical data, high availability |
+| **RAID 5 (Striping with Parity)**| 3+     | Can lose 1 disk                                     | Good read, slower write  | File servers, general use            |
+| **RAID 6 (Striping with Double Parity)**| 4+| Can lose 2 disks                                    | Good read, slower write  | Large storage systems                |
+| **RAID 10 (Mirroring and Striping)**| 4+  | Multiple disk failures (one per mirrored pair)       | High read/write speed    | High-performance, mission-critical systems |
+
+### Setup RAID 0 (striping)
+
+```
+[root@rh21 ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom
+vda           252:0    0   64G  0 disk
+├─vda1        252:1    0  600M  0 part /boot/efi
+├─vda2        252:2    0    1G  0 part /boot
+└─vda3        252:3    0 62.4G  0 part
+  ├─rhel-root 253:0    0 39.3G  0 lvm  /
+  ├─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+  └─rhel-home 253:2    0 19.2G  0 lvm  /home
+vdb           252:16   0   10G  0 disk
+vdc           252:32   0    5G  0 disk
+vdd           252:48   0    5G  0 disk
+vde           252:64   0    5G  0 disk
+
+[root@rh21 ~]# mdadm --create /dev/md0 --level=0 --raid-devices=2 /dev/vdc /dev/vdd
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+
+[root@rh21 ~]# cat /proc/mdstat
+Personalities : [raid0]
+md0 : active raid0 vdd[1] vdc[0]
+      10475520 blocks super 1.2 512k chunks
+
+unused devices: <none>
+
+[root@rh21 ~]# mkfs.ext4 /dev/md0
+mke2fs 1.46.5 (30-Dec-2021)
+Discarding device blocks: done
+Creating filesystem with 2618880 4k blocks and 655360 inodes
+Filesystem UUID: 16e81ccd-8e84-4525-b5e8-1540a7e79647
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@rh21 ~]# mkdir /mnt/raid0
+[root@rh21 ~]# mount /dev/md0 /mnt/raid0
+[root@rh21 ~]# touch /mnt/raid0/file1
+```
+
+### Setup RAID 1 (Mirroring)
+
+```
+[root@rh21 ~]# mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/vde /dev/vdf
+mdadm: Note: this array has metadata at the start and
+    may not be suitable as a boot device.  If you plan to
+    store '/boot' on this device please ensure that
+    your boot-loader understands md/v1.x metadata, or use
+    --metadata=0.90
+Continue creating array? y
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md1 started.
+
+[root@rh21 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1]
+md1 : active raid1 vdf[1] vde[0]
+      5237760 blocks super 1.2 [2/2] [UU]
+      [===================>.]  resync = 97.6% (5117184/5237760) finish=0.0min speed=204689K/sec
+
+md0 : active raid0 vdc[0] vdd[1]
+      10475520 blocks super 1.2 512k chunks
+
+unused devices: <none>
+
+[root@rh21 ~]# mkfs.ext4 /dev/md1
+mke2fs 1.46.5 (30-Dec-2021)
+Discarding device blocks: done
+Creating filesystem with 1309440 4k blocks and 327680 inodes
+Filesystem UUID: f54d4b39-a6e7-434f-81f0-d4d76a482f37
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@rh21 ~]# mkdir /mnt/raid1
+[root@rh21 ~]# mount /dev/md1 /mnt/raid1
+[root@rh21 ~]# touch /mnt/raid1/file2
+
+[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
+```
+#### Mark drive as faulty
+```
+[root@rh21 ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom
+vda           252:0    0   64G  0 disk
+├─vda1        252:1    0  600M  0 part  /boot/efi
+├─vda2        252:2    0    1G  0 part  /boot
+└─vda3        252:3    0 62.4G  0 part
+  ├─rhel-root 253:0    0 39.3G  0 lvm   /
+  ├─rhel-swap 253:1    0  3.9G  0 lvm   [SWAP]
+  └─rhel-home 253:2    0 19.2G  0 lvm   /home
+vdb           252:16   0   10G  0 disk
+vdc           252:32   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vdd           252:48   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vde           252:64   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdf           252:80   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdg           252:96   0    5G  0 disk
+vdh           252:112  0    5G  0 disk
+
+[root@rh21 ~]# mdadm --fail /dev/md1 /dev/vdf
+mdadm: set /dev/vdf faulty in /dev/md1
+
+[root@rh21 ~]# mdadm --remove /dev/md1 /dev/vdf
+mdadm: hot removed /dev/vdf from /dev/md1
+
+[root@rh21 ~]# sudo mdadm --zero-superblock /dev/vdf   # THIS WILL MAKE IT AVAILABLE TO OTHER ARRAYS
+
+[root@rh21 ~]# mdadm --add /dev/md1 /dev/vdg
+mdadm: added /dev/vdg
+
+[root@rh21 ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom
+vda           252:0    0   64G  0 disk
+├─vda1        252:1    0  600M  0 part  /boot/efi
+├─vda2        252:2    0    1G  0 part  /boot
+└─vda3        252:3    0 62.4G  0 part
+  ├─rhel-root 253:0    0 39.3G  0 lvm   /
+  ├─rhel-swap 253:1    0  3.9G  0 lvm   [SWAP]
+  └─rhel-home 253:2    0 19.2G  0 lvm   /home
+vdb           252:16   0   10G  0 disk
+vdc           252:32   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vdd           252:48   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vde           252:64   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdf           252:80   0    5G  0 disk
+vdg           252:96   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdh           252:112  0    5G  0 disk
+
+[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
+````
+
+### Setup RAID 5 (Striping with Parity)
+
+```
+[root@rh21 ~]# mdadm --create /dev/md5 --level=5 --raid-devices=3 /dev/vd[hif]
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md5 started.
+[root@rh21 ~]# ca /proc/mdstat
+-bash: ca: command not found
+[root@rh21 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md5 : active raid5 vdi[3] vdh[1] vdf[0]
+      10475520 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/2] [UU_]
+      [===>.................]  recovery = 16.9% (887036/5237760) finish=0.8min speed=88703K/sec
+
+md1 : active raid1 vdg[2] vde[0]
+      5237760 blocks super 1.2 [2/2] [UU]
+
+md0 : active raid0 vdc[0] vdd[1]
+
+[root@rh21 ~]# mkfs.ext4 /dev/md5
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md5 contains a ext4 file system
+	last mounted on /mnt/raid1 on Thu Sep 12 16:16:33 2024
+Proceed anyway? (y,N) y
+Creating filesystem with 2618880 4k blocks and 655360 inodes
+Filesystem UUID: f223475b-8c2c-495b-b70e-72bd742822aa
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@rh21 ~]# mkdir /mnt/raid5
+[root@rh21 ~]# mount /dev/md5 /mnt/raid5
+[root@rh21 ~]# touch /mnt/raid5/file5
+
+[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
+```
+
+## journal
+By default the journals are volatile(stored in memory), to persist then you can wither edit the `/etc/systemd/journald.conf` file or 
+### Config
+`/etc/systemd/journald.conf`
+
+### Basic Usage
+`journalctl` is a command-line tool used to view and query logs collected by `systemd-journald`. It allows you to inspect system logs, service logs, kernel logs, and more.
+
+#### To view all logs reverse order:
+`journalctl -r`
+___
+#### follow logs
+`journalctl -f`
+___
+#### boot up logs
+`journalctl -b`
+___
+#### boot up logs - For the previous boot
+`journalctl -b -1`
+___
+#### Filter by time
+`journalctl --since "2024-09-01" --until "2024-09-02"`
+___
+#### filter by service
+`journalctl -u <service_name>`
+___
+#### filter by priority Shows logs of a specified priority (0-7)
+`journalctl -p <priority>`
+___
+#### kernal logs
+`journalctl -k`
+___
+#### last 50 lines
+`journalctl -n 50`
+___
+
+#### User or PID logs
+```
+journalctl _UID=<user_id>
+journalctl _PID=<process_id>
+```
+___
+#### Add explainer text if possible
+`journalctl -x`
+___
+## Check the change log for a package:
+`rpm -q --changelog gcc`
+___
+___
+___
+___
+
 # Revision of things i dont know so well
 |section                                 |comments                                      |
 |----------------------------------------|----------------------------------------------|
+|[Networking]||
 | [nmcli ](#nmcli)                       | I forget to set method and to perform reload, take note of adding a second IP|
-| [Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
-| [extend ext4 FS](#6-extend-the-filesystem-if-ext4) | I forget the command `resize2fs` |
-| [comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings, know the -empty and -delete cmds for find |
-| [Change default Target](#change-default-target) | just needed a refresher. |
+|[Kernal/boot]||
 | [Update kernel](#install-kernel-updates)  | new to me |
-| [Pwquality and ageing](#password-aging) | note which file has what |
-| [Tar bz2 capabilities](#tar-using-bzip-and-then-extract-the-data-to-dir-restore)|new to me|
-| [NFS](#nfs-network-file-system)|totally forgot how to do this|
+| [Setting Kernal params](#setting-kernel-parameters-at-runtime)| |
 | [Change boot index](#set-linux-to-boot-of-index-1-in-the-boot-menu)|new to me|
+| [Change root pwd](#2-methods-to-change-the-root-password-when-you-dont-know-it)| forget exec /sbin/init |
+|[Filesystems]||
+| [extend FS](#5-extend-the-filesystem-if-xfs) | I forget the command `resize2fs` |
+| [NFS](#nfs-network-file-system)|totally forgot how to do this|
 | [Create swap](#create-swap)|forgot about the mount details, and how to check with `swapon -s`|
-| [Prohibit root login over ssh](#prohibit-root-login-over-ssh)|good reminder|
-| [Create a systemd service](#???)|to be done|
-| [Podman stuff](#containers-podman) | go over it multiple times |
-| [Centralized logging](#setup-centralized-logging)|new to me|
-| [create local repo](#make-a-local-repo)|new to me|
-| [setup ftp](#ftp-vsftpd---server-proc)|new to me|
+| [VDO setup](#vdo)|VDO is broken|
+|[Scripting]||
+| [comparing strings in scripts](#sctipting-notes) | I forget the quotes in scripts when comp strings, know the -empty and -delete cmds for find |
 | [User creation script](#usr-creation-scrpt)|passwd can takein a --stdin flag|
+| [Script concepts](#script-concepts)|very valuable, need to know this|
+|[Users / login]||
+| [Pwquality and ageing](#password-aging) | note which file has what |
+| [Prohibit root login over ssh](#prohibit-root-login-over-ssh)|good reminder|
+| [Lock a account](#locking-a-user-account)|new to me|
+| [sudoers](#sudoers)|how to give a user sudo privladges|
+| [Stickbits etc](#sticky-bit)|need refresher|
+| [Nuances with permissioning](#nuances-with-permissioning)|
+|[Archiving]||
+| [Tar bz2 capabilities](#tar-using-bzip-and-then-extract-the-data-to-dir-restore)|new to me|
+|[Systemd]||
+| [Create a systemd service](#???)|to be done|
+| [Change default Target](#change-default-target) | just needed a refresher. |
+|[Containers]||
+| [Podman stuff](#containers-podman) | go over it multiple times |
+|[Logging]||
+| [Centralized logging](#setup-centralized-logging)|new to me|
+|[Repo]||
+| [create local repo](#make-a-local-repo)|new to me|
+|[FTP]||
+| [setup ftp](#ftp-vsftpd---server-proc)|new to me|
 
 
 
 
 
+## TODO
+||||
+|-|-|-|
+|Test4|||
+||Storage|11,12,13|
+||Sripting|16,36,37,38,|
+||archiving|19,45|
+||containers|23,29|
+||permissioning|47|
+|Test5|||
+||Networking|2,3,33|
+||Storage|9,10,11,12,13,20,29,35,44|
+||scripting|16,17,34,45|
+||archiving|19,45|
+||firewall|23|
+||logging|24,25,26|
+||image|42|
