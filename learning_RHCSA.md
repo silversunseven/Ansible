@@ -218,10 +218,16 @@ Commands:
 * `groupdel <groupname>` : will delete a group
 * `usermod <username>` : will modify a user
 
-eg: To Add a user
+#### To add a User
 `useradd -g superheros -s /bin/bash -c "CEO Stark Industries" -m -d /home/ironman ironman`
 
-eg: to change the users shell:
+In this case we specify `-m` but if `CREATE_HOME` is `yes` then it is not needed
+```
+[root@rh21 ~]# grep CREATE_HOME /etc/login.defs
+CREATE_HOME	yes
+```
+
+#### To change the users shell
 `usermod -s /bin/zsh ironman`
 
 
@@ -274,11 +280,11 @@ ENCRYPT_METHOD SHA512
 CREATE_HOME     yes
 
 ```
-The `chage` command changes the number of days between password changes and the date of the last password change. This information is used by the system to determine when a user
+The `chage` command `( NOT PWAGE!!!! )` changes the number of days between password changes and the date of the last password change. This information is used by the system to determine when a user
        must change their password.
 
 CMDLINE: `chage -d <lastday> -m <mindays> -M <maxdays> -W <warndays> -I -E <expiredate> USERNAME`
-* `<last days>` is the # of days since 1970 since last change. Probably wouldnt want to change that, unless needed
+* `-d <last days>` is the # of days since 1970 since last change. Probably wouldnt want to change that, unless needed
 
 eg: `chage -m 5 -M 90 -W 10 -I 3 -E 30 bababutt` results in :
 ironman:$6$Sa3CEa7va56INP3Q$zC4sGsgJAn0RjeYfD4Yh5STzc7CSV6oRez3jgb0tvkygUGxa3R.lNgnQvDF/K5W8bQZZUUjWjdDBt4RcOOx2l0:19949:`5`:`90`:`10`:`3`:`30`:
@@ -1091,7 +1097,7 @@ getfacl - view file access control lists
 |`setfacl -x u:user /path/to/file`| remove permission for a single user|
 |`setfacl -b /path/to/file`| remove permission for all users|
 |`setfacl -m g:group:rw /path/to/file`| add permission for a group|
-|`setfacl -Rm "entry" /path/to/file`| to allow all files and dirs to inherit ACL of parent dir|
+|`setfacl -Rm "entry" /path/to/file`| to allow all files and dirs to inherit ACL of parent dir. `entry` would be for eg: `u:john:rw`|
 
 IMPORTANT:
 * `rwxrwxrwx+` signifies ACL's are applied
@@ -1268,6 +1274,7 @@ httpd_can_connect_ftp --> off
 
 ___
 ## Storage
+![Basic](./img/basic.png)
 ### Adding a Volume
 #### 1) Attach a HDD
 I added a new volume and this is the additional output of `fdisk -l`
@@ -1349,11 +1356,11 @@ ___
 
 ### LVM
 LVM's allow physical disks to be combined together into a logical volume or Volume group and that volumen group can then see seen as a single volume which can be partitioned.
+![Alt text](./img/LVM.png)
 
-
-
-* Disk 1 `---->`rootvg
 ___
+* Disk 1 `---->`rootvg
+
 * Disk 2`\`................... `/---->` /data1
 
 * Disk 3 `---->`datavg `----------->` /data2
@@ -1852,7 +1859,7 @@ ___
 ___
 
 ### Stratis (advanced storage management)
-
+![Alt text](./img/stratis.png)
 `yum install stratis-cli stratisd`
 #### Install
 `systemctl start stratisd`
@@ -1945,7 +1952,7 @@ UUID=f8f45b16-9f00-46ec-9b35-bf162160ad23 /bigdataSnap  xfs defaults,x-systemd.r
 ___
 
 ### NFS (Network File System)
-
+![Alt text](./img/NFS.png)
 #### Server Side setup and config
 ```
 yum install nfs-utils -y
@@ -1982,7 +1989,7 @@ mount -a
 ___
 
 ### SAMBA / CIFS (mounting non linux FS's)
-
+![Alt text](./img/samba.png)
 * Sambra shares its FS though SMB (Server Message Block protocol)
 * CIFS (Common Internet File System) became an extension of SMB and have become synonymous with one another.
 
@@ -2095,7 +2102,7 @@ ___
 VDO (Virtual Data Optimizer) is a storage optimization technology designed to 
 * reduce the actual amount of data stored on physical storage devices by using techniques like deduplication and compression. 
 * VDO allows you to create logical volumes that are much larger than the actual physical space they occupy on the disk. 
-
+![Alt text](./img/vdo.png)
 #### Key Features of VDO:
 | Purpose | description |
 |-|-|
