@@ -69,6 +69,8 @@ https://www.redhat.com/de/services/certification/rhcsa?pfe-7d312plns=exams
   - [SAMBA / CIFS (mounting non linux FS's)](#samba-cifs-mounting-non-linux-fss)
   - [Secure Samba](#secure-samba)
   - [VDO](#vdo)
+  - [RAID](#raid)
+  - [Reseting a Device/disk for reuse](#reseting-a-devicedisk-for-reuse)
 - [Boot Process](#boot-process)
 - [Systemd Targets](#systemd-targets)
   - [Check current target](#check-current-target)
@@ -110,7 +112,7 @@ https://www.redhat.com/de/services/certification/rhcsa?pfe-7d312plns=exams
 - [Adding files to all users created](#adding-files-to-all-users-created)
 - [Activating a service in firewalld](#activating-a-service-in-firewalld)
 - [Change Keyboard to swiss german](#change-keyboard-to-swiss-german)
-- [Sctipting notes](#sctipting-notes)
+- [Scripting notes](#scripting-notes)
 - [tar using bzip and then extract the data to dir /restore](#tar-using-bzip-and-then-extract-the-data-to-dir-restore)
 - [Prohibit root login over ssh](#prohibit-root-login-over-ssh)
 - [Troubleshooting systemd](#troubleshooting-systemd)
@@ -142,11 +144,6 @@ https://www.redhat.com/de/services/certification/rhcsa?pfe-7d312plns=exams
   - [Removing Execute Permission from a Directory Disables Navigation:](#removing-execute-permission-from-a-directory-disables-navigation)
   - [Symbolic Link Permissions:](#symbolic-link-permissions)
   - [Umask Influencing Default Permissions:](#umask-influencing-default-permissions)
-- [RAID](#raid)
-  - [Overview](#overview)
-  - [Setup RAID 0 (striping)](#setup-raid-0-striping)
-  - [Setup RAID 1 (Mirroring)](#setup-raid-1-mirroring)
-  - [Setup RAID 5 (Striping with Parity)](#setup-raid-5-striping-with-parity)
 - [journal](#journal)
   - [Config](#config)
   - [Basic Usage](#basic-usage)
@@ -2203,7 +2200,250 @@ VDO currently supports any logical size up to 254 times the size of the physical
  vdostats
  ```
 
+
+
+### RAID
+#### Overview
+| **RAID Level**       | **Disks Required** | **Fault Tolerance**                                 | **Performance**         | **Use Case**                        |
+|----------------------|-------------------|-----------------------------------------------------|-------------------------|--------------------------------------|
+| **RAID 0 (Striping)**| 2+                | None                                                | High read/write speed    | Temporary, non-critical data         |
+| **RAID 1 (Mirroring)**| 2                | Can lose 1 disk                                     | Good read, same write    | OS, critical data, high availability |
+| **RAID 5 (Striping with Parity)**| 3+     | Can lose 1 disk                                     | Good read, slower write  | File servers, general use            |
+| **RAID 6 (Striping with Double Parity)**| 4+| Can lose 2 disks                                    | Good read, slower write  | Large storage systems                |
+| **RAID 10 (Mirroring and Striping)**| 4+  | Multiple disk failures (one per mirrored pair)       | High read/write speed    | High-performance, mission-critical systems |
+
+#### Setup RAID 0 (striping)
+
+```
+[root@rh21 ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom
+vda           252:0    0   64G  0 disk
+├─vda1        252:1    0  600M  0 part /boot/efi
+├─vda2        252:2    0    1G  0 part /boot
+└─vda3        252:3    0 62.4G  0 part
+  ├─rhel-root 253:0    0 39.3G  0 lvm  /
+  ├─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
+  └─rhel-home 253:2    0 19.2G  0 lvm  /home
+vdb           252:16   0   10G  0 disk
+vdc           252:32   0    5G  0 disk
+vdd           252:48   0    5G  0 disk
+vde           252:64   0    5G  0 disk
+
+[root@rh21 ~]# mdadm --create /dev/md0 --level=0 --raid-devices=2 /dev/vdc /dev/vdd
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+
+[root@rh21 ~]# cat /proc/mdstat
+Personalities : [raid0]
+md0 : active raid0 vdd[1] vdc[0]
+      10475520 blocks super 1.2 512k chunks
+
+unused devices: <none>
+
+[root@rh21 ~]# mkfs.ext4 /dev/md0
+mke2fs 1.46.5 (30-Dec-2021)
+Discarding device blocks: done
+Creating filesystem with 2618880 4k blocks and 655360 inodes
+Filesystem UUID: 16e81ccd-8e84-4525-b5e8-1540a7e79647
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@rh21 ~]# mkdir /mnt/raid0
+[root@rh21 ~]# mount /dev/md0 /mnt/raid0
+[root@rh21 ~]# touch /mnt/raid0/file1
+```
+
+#### Setup RAID 1 (Mirroring)
+
+```
+[root@rh21 ~]# mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/vde /dev/vdf
+mdadm: Note: this array has metadata at the start and
+    may not be suitable as a boot device.  If you plan to
+    store '/boot' on this device please ensure that
+    your boot-loader understands md/v1.x metadata, or use
+    --metadata=0.90
+Continue creating array? y
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md1 started.
+
+[root@rh21 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1]
+md1 : active raid1 vdf[1] vde[0]
+      5237760 blocks super 1.2 [2/2] [UU]
+      [===================>.]  resync = 97.6% (5117184/5237760) finish=0.0min speed=204689K/sec
+
+md0 : active raid0 vdc[0] vdd[1]
+      10475520 blocks super 1.2 512k chunks
+
+unused devices: <none>
+
+[root@rh21 ~]# mkfs.ext4 /dev/md1
+mke2fs 1.46.5 (30-Dec-2021)
+Discarding device blocks: done
+Creating filesystem with 1309440 4k blocks and 327680 inodes
+Filesystem UUID: f54d4b39-a6e7-434f-81f0-d4d76a482f37
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@rh21 ~]# mkdir /mnt/raid1
+[root@rh21 ~]# mount /dev/md1 /mnt/raid1
+[root@rh21 ~]# touch /mnt/raid1/file2
+
+[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
+```
+##### Mark drive as faulty
+```
+[root@rh21 ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom
+vda           252:0    0   64G  0 disk
+├─vda1        252:1    0  600M  0 part  /boot/efi
+├─vda2        252:2    0    1G  0 part  /boot
+└─vda3        252:3    0 62.4G  0 part
+  ├─rhel-root 253:0    0 39.3G  0 lvm   /
+  ├─rhel-swap 253:1    0  3.9G  0 lvm   [SWAP]
+  └─rhel-home 253:2    0 19.2G  0 lvm   /home
+vdb           252:16   0   10G  0 disk
+vdc           252:32   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vdd           252:48   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vde           252:64   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdf           252:80   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdg           252:96   0    5G  0 disk
+vdh           252:112  0    5G  0 disk
+
+[root@rh21 ~]# mdadm --fail /dev/md1 /dev/vdf
+mdadm: set /dev/vdf faulty in /dev/md1
+
+[root@rh21 ~]# mdadm --remove /dev/md1 /dev/vdf
+mdadm: hot removed /dev/vdf from /dev/md1
+
+[root@rh21 ~]# sudo mdadm --zero-superblock /dev/vdf   # THIS WILL MAKE IT AVAILABLE TO OTHER ARRAYS
+
+[root@rh21 ~]# mdadm --add /dev/md1 /dev/vdg
+mdadm: added /dev/vdg
+
+[root@rh21 ~]# lsblk
+NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+sr0            11:0    1 1024M  0 rom
+vda           252:0    0   64G  0 disk
+├─vda1        252:1    0  600M  0 part  /boot/efi
+├─vda2        252:2    0    1G  0 part  /boot
+└─vda3        252:3    0 62.4G  0 part
+  ├─rhel-root 253:0    0 39.3G  0 lvm   /
+  ├─rhel-swap 253:1    0  3.9G  0 lvm   [SWAP]
+  └─rhel-home 253:2    0 19.2G  0 lvm   /home
+vdb           252:16   0   10G  0 disk
+vdc           252:32   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vdd           252:48   0    5G  0 disk
+└─md0           9:0    0   10G  0 raid0 /mnt/raid0
+vde           252:64   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdf           252:80   0    5G  0 disk
+vdg           252:96   0    5G  0 disk
+└─md1           9:1    0    5G  0 raid1 /mnt/raid1
+vdh           252:112  0    5G  0 disk
+
+[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
+````
+
+#### Setup RAID 5 (Striping with Parity)
+```
+[root@rh21 ~]# mdadm --create /dev/md5 --level=5 --raid-devices=3 /dev/vd[hif]
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md5 started.
+[root@rh21 ~]# ca /proc/mdstat
+-bash: ca: command not found
+[root@rh21 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md5 : active raid5 vdi[3] vdh[1] vdf[0]
+      10475520 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/2] [UU_]
+      [===>.................]  recovery = 16.9% (887036/5237760) finish=0.8min speed=88703K/sec
+
+md1 : active raid1 vdg[2] vde[0]
+      5237760 blocks super 1.2 [2/2] [UU]
+
+md0 : active raid0 vdc[0] vdd[1]
+
+[root@rh21 ~]# mkfs.ext4 /dev/md5
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md5 contains a ext4 file system
+	last mounted on /mnt/raid1 on Thu Sep 12 16:16:33 2024
+Proceed anyway? (y,N) y
+Creating filesystem with 2618880 4k blocks and 655360 inodes
+Filesystem UUID: f223475b-8c2c-495b-b70e-72bd742822aa
+Superblock backups stored on blocks:
+	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@rh21 ~]# mkdir /mnt/raid5
+[root@rh21 ~]# mount /dev/md5 /mnt/raid5
+[root@rh21 ~]# touch /mnt/raid5/file5
+
+[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
+```
+
+### Reseting a Device/disk for reuse
+I will use vdb as an example
+```
+umount /dev/vdb
+IF LV
+lvchange -an <vg-name>/<vdo-lv-name>                  #this will disable it
+lvremove <vg-name>/<vdo-lv-name>                      #this will remove it
+wipefs --all /dev/vdb                                 #removes signatures
+dd if=/dev/zero of=/dev/vdb bs=1M status=progress     #This will write zeros across the entire device. Bs=1MB is the optimized block size
+```
+You can now use fdisk as normal
+
+
 ___
+Script to create a partition using EOF
+```
+#!/bin/bash
+
+asize=`lsblk |grep -i vdb1| awk '{ print $4 }'`
+adev=`fdisk -l /dev/vdb1| grep vdb1| awk '{ print $2}' |sed 's/:$//g'`
+
+wsize=2
+wdev="/dev/vdb1"
+
+lsblk |grep -i vdb1| awk '{ print $4 }'
+if [ $? == 0 ]
+then
+  echo " vdb1 already exists"
+  exit 1
+else
+    fdisk /dev/vdb << EOF
+n
+p
+1
+2048
++${wsize}G
+p
+w
+EOF
+
+fi
+```
 
 
 ## Boot Process
@@ -3356,207 +3596,6 @@ rwx
 ```
 ___
 
-
-## RAID
-### Overview
-| **RAID Level**       | **Disks Required** | **Fault Tolerance**                                 | **Performance**         | **Use Case**                        |
-|----------------------|-------------------|-----------------------------------------------------|-------------------------|--------------------------------------|
-| **RAID 0 (Striping)**| 2+                | None                                                | High read/write speed    | Temporary, non-critical data         |
-| **RAID 1 (Mirroring)**| 2                | Can lose 1 disk                                     | Good read, same write    | OS, critical data, high availability |
-| **RAID 5 (Striping with Parity)**| 3+     | Can lose 1 disk                                     | Good read, slower write  | File servers, general use            |
-| **RAID 6 (Striping with Double Parity)**| 4+| Can lose 2 disks                                    | Good read, slower write  | Large storage systems                |
-| **RAID 10 (Mirroring and Striping)**| 4+  | Multiple disk failures (one per mirrored pair)       | High read/write speed    | High-performance, mission-critical systems |
-
-### Setup RAID 0 (striping)
-
-```
-[root@rh21 ~]# lsblk
-NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
-sr0            11:0    1 1024M  0 rom
-vda           252:0    0   64G  0 disk
-├─vda1        252:1    0  600M  0 part /boot/efi
-├─vda2        252:2    0    1G  0 part /boot
-└─vda3        252:3    0 62.4G  0 part
-  ├─rhel-root 253:0    0 39.3G  0 lvm  /
-  ├─rhel-swap 253:1    0  3.9G  0 lvm  [SWAP]
-  └─rhel-home 253:2    0 19.2G  0 lvm  /home
-vdb           252:16   0   10G  0 disk
-vdc           252:32   0    5G  0 disk
-vdd           252:48   0    5G  0 disk
-vde           252:64   0    5G  0 disk
-
-[root@rh21 ~]# mdadm --create /dev/md0 --level=0 --raid-devices=2 /dev/vdc /dev/vdd
-mdadm: Defaulting to version 1.2 metadata
-mdadm: array /dev/md0 started.
-
-[root@rh21 ~]# cat /proc/mdstat
-Personalities : [raid0]
-md0 : active raid0 vdd[1] vdc[0]
-      10475520 blocks super 1.2 512k chunks
-
-unused devices: <none>
-
-[root@rh21 ~]# mkfs.ext4 /dev/md0
-mke2fs 1.46.5 (30-Dec-2021)
-Discarding device blocks: done
-Creating filesystem with 2618880 4k blocks and 655360 inodes
-Filesystem UUID: 16e81ccd-8e84-4525-b5e8-1540a7e79647
-Superblock backups stored on blocks:
-	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
-
-Allocating group tables: done
-Writing inode tables: done
-Creating journal (16384 blocks): done
-Writing superblocks and filesystem accounting information: done
-
-[root@rh21 ~]# mkdir /mnt/raid0
-[root@rh21 ~]# mount /dev/md0 /mnt/raid0
-[root@rh21 ~]# touch /mnt/raid0/file1
-```
-
-### Setup RAID 1 (Mirroring)
-
-```
-[root@rh21 ~]# mdadm --create /dev/md1 --level=1 --raid-devices=2 /dev/vde /dev/vdf
-mdadm: Note: this array has metadata at the start and
-    may not be suitable as a boot device.  If you plan to
-    store '/boot' on this device please ensure that
-    your boot-loader understands md/v1.x metadata, or use
-    --metadata=0.90
-Continue creating array? y
-mdadm: Defaulting to version 1.2 metadata
-mdadm: array /dev/md1 started.
-
-[root@rh21 ~]# cat /proc/mdstat
-Personalities : [raid0] [raid1]
-md1 : active raid1 vdf[1] vde[0]
-      5237760 blocks super 1.2 [2/2] [UU]
-      [===================>.]  resync = 97.6% (5117184/5237760) finish=0.0min speed=204689K/sec
-
-md0 : active raid0 vdc[0] vdd[1]
-      10475520 blocks super 1.2 512k chunks
-
-unused devices: <none>
-
-[root@rh21 ~]# mkfs.ext4 /dev/md1
-mke2fs 1.46.5 (30-Dec-2021)
-Discarding device blocks: done
-Creating filesystem with 1309440 4k blocks and 327680 inodes
-Filesystem UUID: f54d4b39-a6e7-434f-81f0-d4d76a482f37
-Superblock backups stored on blocks:
-	32768, 98304, 163840, 229376, 294912, 819200, 884736
-
-Allocating group tables: done
-Writing inode tables: done
-Creating journal (16384 blocks): done
-Writing superblocks and filesystem accounting information: done
-
-[root@rh21 ~]# mkdir /mnt/raid1
-[root@rh21 ~]# mount /dev/md1 /mnt/raid1
-[root@rh21 ~]# touch /mnt/raid1/file2
-
-[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
-```
-#### Mark drive as faulty
-```
-[root@rh21 ~]# lsblk
-NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
-sr0            11:0    1 1024M  0 rom
-vda           252:0    0   64G  0 disk
-├─vda1        252:1    0  600M  0 part  /boot/efi
-├─vda2        252:2    0    1G  0 part  /boot
-└─vda3        252:3    0 62.4G  0 part
-  ├─rhel-root 253:0    0 39.3G  0 lvm   /
-  ├─rhel-swap 253:1    0  3.9G  0 lvm   [SWAP]
-  └─rhel-home 253:2    0 19.2G  0 lvm   /home
-vdb           252:16   0   10G  0 disk
-vdc           252:32   0    5G  0 disk
-└─md0           9:0    0   10G  0 raid0 /mnt/raid0
-vdd           252:48   0    5G  0 disk
-└─md0           9:0    0   10G  0 raid0 /mnt/raid0
-vde           252:64   0    5G  0 disk
-└─md1           9:1    0    5G  0 raid1 /mnt/raid1
-vdf           252:80   0    5G  0 disk
-└─md1           9:1    0    5G  0 raid1 /mnt/raid1
-vdg           252:96   0    5G  0 disk
-vdh           252:112  0    5G  0 disk
-
-[root@rh21 ~]# mdadm --fail /dev/md1 /dev/vdf
-mdadm: set /dev/vdf faulty in /dev/md1
-
-[root@rh21 ~]# mdadm --remove /dev/md1 /dev/vdf
-mdadm: hot removed /dev/vdf from /dev/md1
-
-[root@rh21 ~]# sudo mdadm --zero-superblock /dev/vdf   # THIS WILL MAKE IT AVAILABLE TO OTHER ARRAYS
-
-[root@rh21 ~]# mdadm --add /dev/md1 /dev/vdg
-mdadm: added /dev/vdg
-
-[root@rh21 ~]# lsblk
-NAME          MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
-sr0            11:0    1 1024M  0 rom
-vda           252:0    0   64G  0 disk
-├─vda1        252:1    0  600M  0 part  /boot/efi
-├─vda2        252:2    0    1G  0 part  /boot
-└─vda3        252:3    0 62.4G  0 part
-  ├─rhel-root 253:0    0 39.3G  0 lvm   /
-  ├─rhel-swap 253:1    0  3.9G  0 lvm   [SWAP]
-  └─rhel-home 253:2    0 19.2G  0 lvm   /home
-vdb           252:16   0   10G  0 disk
-vdc           252:32   0    5G  0 disk
-└─md0           9:0    0   10G  0 raid0 /mnt/raid0
-vdd           252:48   0    5G  0 disk
-└─md0           9:0    0   10G  0 raid0 /mnt/raid0
-vde           252:64   0    5G  0 disk
-└─md1           9:1    0    5G  0 raid1 /mnt/raid1
-vdf           252:80   0    5G  0 disk
-vdg           252:96   0    5G  0 disk
-└─md1           9:1    0    5G  0 raid1 /mnt/raid1
-vdh           252:112  0    5G  0 disk
-
-[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
-````
-
-### Setup RAID 5 (Striping with Parity)
-
-```
-[root@rh21 ~]# mdadm --create /dev/md5 --level=5 --raid-devices=3 /dev/vd[hif]
-mdadm: Defaulting to version 1.2 metadata
-mdadm: array /dev/md5 started.
-[root@rh21 ~]# ca /proc/mdstat
--bash: ca: command not found
-[root@rh21 ~]# cat /proc/mdstat
-Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
-md5 : active raid5 vdi[3] vdh[1] vdf[0]
-      10475520 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/2] [UU_]
-      [===>.................]  recovery = 16.9% (887036/5237760) finish=0.8min speed=88703K/sec
-
-md1 : active raid1 vdg[2] vde[0]
-      5237760 blocks super 1.2 [2/2] [UU]
-
-md0 : active raid0 vdc[0] vdd[1]
-
-[root@rh21 ~]# mkfs.ext4 /dev/md5
-mke2fs 1.46.5 (30-Dec-2021)
-/dev/md5 contains a ext4 file system
-	last mounted on /mnt/raid1 on Thu Sep 12 16:16:33 2024
-Proceed anyway? (y,N) y
-Creating filesystem with 2618880 4k blocks and 655360 inodes
-Filesystem UUID: f223475b-8c2c-495b-b70e-72bd742822aa
-Superblock backups stored on blocks:
-	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632
-
-Allocating group tables: done
-Writing inode tables: done
-Creating journal (16384 blocks): done
-Writing superblocks and filesystem accounting information: done
-
-[root@rh21 ~]# mkdir /mnt/raid5
-[root@rh21 ~]# mount /dev/md5 /mnt/raid5
-[root@rh21 ~]# touch /mnt/raid5/file5
-
-[root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
-```
 
 ## journal
 By default the journals are volatile(stored in memory), to persist then you can wither edit the `/etc/systemd/journald.conf` file or 
