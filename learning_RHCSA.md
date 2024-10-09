@@ -214,6 +214,8 @@ Commands:
 * `userdel <username>` : will delete a user
 * `groupdel <groupname>` : will delete a group
 * `usermod <username>` : will modify a user
+* `gpasswd -d <username> <group>` : will remove a user from a group
+
 
 #### To add a User
 `useradd -g superheros -s /bin/bash -c "CEO Stark Industries" -m -d /home/ironman ironman`
@@ -366,7 +368,7 @@ Port 22                 # runs on 22 by default, can be changed
 ### Setup Keys
 STEP 1
 
-    ssh- keygen
+    ssh-keygen
 
 STEP 2
 
@@ -1265,11 +1267,73 @@ httpd_can_connect_ftp --> off
 
 [root@centos1 ~]# ls -lrtZ aiden.sh
 -rw-r--r--. 1 root root unconfined_u:object_r:httpd_user_script_exec_t:s0 0 Aug 17 07:17 aiden.sh
-
 ```
 
+### Semanage
+#### Case scenario where httpd must start on a different port
 
+* Too lookup the context, you will see : <b>system_u:object_r:<span style="color:red">httpd_exec_t</span>:s0</b> /usr/sbin/httpd
+
+      ls -Z /usr/sbin/httpd
+
+* List ports associated with <span style="color:red">httpd_exec_t</span>
+
+      semanage port -l | grep http_port_t
+
+* Add a new port (e.g., 82) for Apache (http_port_t):
+
+      semanage port -a -t http_port_t -p tcp 82
+    
+* restart
+
+      systemctl restart httpd
+
+#### Case scenario where httpd must serve from a custom dir
+Let’s say you want to allow Apache to serve content from `/my/custom/directory`. By default, Apache can only serve content from `/var/www`, but you can change the file context of your custom directory to allow this.
+
+```
+<update httpd.conf to server from my/custom/directory>
+semanage fcontext -a -t httpd_sys_content_t "/my/custom/directory(/.*)?"
+restorecon -Rv /my/custom/directory
+```
+
+#### make httpd to access external conn
+If you want to allow Apache to make outbound network connections, you can enable the httpd_can_network_connect boolean:
+
+`setsebool -P httpd_can_network_connect 1`
+
+#### when to use `semanage login` 
+You would use the `semanage login -a` command to map a Linux user to a specific SELinux user type if you need more control over what that user can access. For example:
+Limiting access for a restricted user: If you want to map a Linux user `aryan` to a restricted SELinux user `user_u` who has very limited permissions in the system.
+
+```
+sudo semanage login -a -s user_u aryan
+```
+You can also map a user to a more privileged type: You may map a system administrator to the `staff_u` type, which provides additional privileges over regular users.
+```
+sudo semanage login -a -s staff_u aryan
+```
+Instead of needing setcap, you used semanage to modify SELinux policy and allow Apache to bind to port 82 by associating the port with the correct type (http_port_t), which is already permitted for HTTP traffic by SELinux.
 ___
+
+### Another way to deal with SElinux issues is this:
+* AVC denials: These messages show that the httpd service (with the SELinux context system_u:system_r:httpd_t:s0) is being denied permission to bind to a reserved port (src=82). The reserved_port_t is a label for reserved ports, which typically include ports below 1024.
+* `audit2allow` suggestion: The tool audit2allow suggests a solution by providing a policy that would allow this action.
+
+#### 1) Generate a custom SELinux policy  based on the AVC denial in audit.log
+* This command generates a module file called httpd_bind_reserved_port.pp.
+
+```
+cat /var/log/audit/audit.log | audit2allow -M httpd_bind_reserved_port
+```
+
+#### 2) Install the custom policy:
+```
+semodule -i httpd_bind_reserved_port.pp
+```
+___
+
+
 ## Storage
 ![Basic](./img/basic.png)
 ### Adding a Volume
@@ -1352,7 +1416,10 @@ tmpfs            46M     0   46M   0% /run/user/0
 ___
 
 ### LVM
-LVM's allow physical disks to be combined together into a logical volume or Volume group and that volumen group can then see seen as a single volume which can be partitioned.
+* LVM's allow physical disks to be combined together into a logical volume or Volume group and that volumen group can then see seen as a single volume which can be partitioned.
+* An <b>extent</b> is the smallest unit of storage that LVM allocates. When creating a physical volume (PV), the space is divided into extents. These extents are then used by by both volume groups (VG) and logical volumes (LV). (you can define the size of an extent in the VG). All space in LVM is allocated and managed in terms of these extents.
+* <b>Extent</b>: The smallest unit of allocation in LVM, used to manage space in both physical and logical volumes.
+
 ![Alt text](./img/LVM.png)
 
 ___
@@ -1526,6 +1593,8 @@ Syncing disks.
 ```
 
 ##### 4) Create a volume Group(VG)
+* When creating a VG, you can specify a custom Extent size with `-s` or `--physicalextentsize` example `vgcreate -s 32K my_vg /dev/sdb`
+* When you create the LV you can then say how many extents it should be. see the next step
 ```
 [root@centos2 ~]# vgcreate data_vg /dev/sda1
   Volume group "data_vg" successfully created
@@ -1555,6 +1624,11 @@ Syncing disks.
 
 
 ##### 5) Create a logical Volum(LV)
+* When you create the LV you can then say how many extents it should be.  `lvcreate -l 20 -n my_lv my_vg`   (32K * 20 extents = 640K)
+* The `-l` <b>(lowercase "L")</b> option is used to specify the <b>amount</b> of extents. 
+* The `-L` is to specify the size.
+
+
 ```
 [root@centos2 ~]# lvcreate -n data_lv --size 1000MB data_vg
   Logical volume "data_lv" created.
@@ -1712,6 +1786,10 @@ Syncing disks.
 
 ```
 ##### 3) Extend the volume Group(VG)
+* Adds a physical volume to a VG.
+* By default, a VG will use the full size of any PV added to it.
+* Use `pvcreate --setphysicalvolumesize` to limit how much space LVM thinks the PV has.
+
 [root@centos2 ~]# vgextend data_vg /dev/sdb1
   Volume group "data_vg" successfully extended
 
@@ -1741,6 +1819,10 @@ Syncing disks.
 
 
 ##### 4) Extend the logical Volum(LV)
+* Use `+100%FREE` if you want to allocate all the free space in the VG to the LV. `lvextend -l +100%FREE /dev/rhel/root`
+* The `+` sign is important because it indicates that you're adding to the current size, <b>rather than setting a new absolute size.</b>
+* `-l <size>`is the same as `--size <size>`
+
 ```
 [root@centos2 ~]# lvextend -L +2GB /dev/mapper/data_vg-data_lv
   Size of logical volume data_vg/data_lv changed from 1000.00 MiB (250 extents) to <2.98 GiB (762 extents).
@@ -1951,38 +2033,82 @@ ___
 ### NFS (Network File System)
 ![Alt text](./img/NFS.png)
 #### Server Side setup and config
+* 1 Install NFS utilities
+
+```yum install nfs-utils -y```
+
+* 2 Create the directory to share
 ```
-yum install nfs-utils -y
-vi /etc/exports
-
-#directory  SrcServers(permissions)
-/exfs       *(rw,sync,no_subtree_check)
-
-exportfs -ra
-
-systemctl enable nfs-server.service
-systemctl start nfs-server.service
-
-sudo firewall-cmd --permanent --add-service=nfs
-sudo firewall-cmd --reload
+mkdir -p /srv/nfs_share
+chmod 755 /srv/nfs_share
 ```
+
+* 3 Edit /etc/exports to define the share
+```
+echo "/srv/nfs_share 192.168.1.0/24(rw,sync,no_root_squash)" >> /etc/exports
+```
+
+* 4 Export the file system
+```
+exportfs -a
+```
+
+* 5 Start and enable the NFS server
+```
+systemctl start nfs-server
+systemctl enable nfs-server
+```
+
+* 6 (Optional) Configure firewall to allow NFS
+```
+firewall-cmd --permanent --add-service=nfs
+firewall-cmd --reload
+```
+
 |Options|Meaning|
 |-|-|
 |rw| Read/write access.|
 |sync| Writes are committed to disk before the request is completed.|
 |no_subtree_check| Prevents subtree checking, which can improve performance.|
-
+___
 
 #### Client side connection
+* Here we will use AUTOFS to automount and unmount this shared FS.
+* If you don't use autofs, then just add it to 
+
 ```
-yum install nfs-utils -y
 vi /etc/fstab
 10.0.0.63:/exfs                 /mymount                nfs     defaults        0 0
-
-mkdir /mymount
-systemctl daemon-reload
-mount -a
 ```
+
+* <b>HOWEVER</b> here we will use AutoFS:
+* 1 Install AutoFS and NFS utilities
+```
+yum install autofs nfs-utils -y
+```
+
+* 2 Edit /etc/auto.master to add the mount point
+```
+echo "/mnt    /etc/auto.nfs" >> /etc/auto.master
+```
+
+* 3 Create the /etc/auto.nfs map file
+```
+echo "nfs_share -fstype=nfs4,rw 192.168.1.10:/srv/nfs_share" > /etc/auto.nfs
+```
+
+* 4 Start and enable the AutoFS service
+```
+systemctl start autofs
+systemctl enable autofs
+```
+
+* 5 Test the AutoFS mount by accessing the directory
+```
+cd /mnt/nfs_share
+```
+
+
 ___
 
 ### SAMBA / CIFS (mounting non linux FS's)
@@ -2212,6 +2338,7 @@ VDO currently supports any logical size up to 254 times the size of the physical
 | **RAID 6 (Striping with Double Parity)**| 4+| Can lose 2 disks                                    | Good read, slower write  | Large storage systems                |
 | **RAID 10 (Mirroring and Striping)**| 4+  | Multiple disk failures (one per mirrored pair)       | High read/write speed    | High-performance, mission-critical systems |
 
+![Alt text](./img/RAID.png)
 #### Setup RAID 0 (striping)
 
 ```
@@ -2401,6 +2528,7 @@ Writing superblocks and filesystem accounting information: done
 
 [root@rh21 ~]# mdadm --detail --scan > /etc/mdadm.conf
 ```
+___
 
 ### Reseting a Device/disk for reuse
 I will use vdb as an example
@@ -2413,7 +2541,6 @@ wipefs --all /dev/vdb                                 #removes signatures
 dd if=/dev/zero of=/dev/vdb bs=1M status=progress     #This will write zeros across the entire device. Bs=1MB is the optimized block size
 ```
 You can now use fdisk as normal
-
 
 ___
 Script to create a partition using EOF
@@ -2833,14 +2960,83 @@ PING 157.240.0.35 (157.240.0.35) 56(84) bytes of data.
 ```
 
 ## Containers (podman)
-While different software, it takes in all the same command structure
+### Setup local repo/registry
+```
+yum install container-tools -y
 
-* <b>podman</b> - managing pods and container images
-* <h>buildah</b> - building pushing and signing container images
-* <b>skopeo</b> - for copying inspecting deleteing and signing images
-* <b>rune</b> - for providing container run and build features to podman and buildah
-* <b>crun</b> - optional runtime that can be configured and gives flexibility, control and securtity for rootless containers.
-* <b>pods</b> - group of containers 
+vi /etc/containers/registries.conf
+[[registry]]
+location = "10.0.0.53:5000"
+insecure = true
+
+systemctl restart podman
+systemctl enable podman
+
+mkdir -p /var/lib/registry
+chcon -R system_u:object_r:container_file_t:s0 /var/lib/registry
+
+podman pull docker.io/library/registry
+podman run -d -p 5000:5000 -v /var/lib/registry:/var/lib/registry --name local-registry registry
+firewall-cmd --add-port=5000/tcp --permanent
+
+
+## AUTOSTART
+podman generate systemd --name local-registry --restart-policy=always --new > /etc/systemd/system/local-registry.service
+systemctl daemon-reload
+systemctl restart local-registry
+systemctl enable local-registry
+
+## ADD http to local repo
+podman pull docker.io/library/httpd
+podman tag httpd 10.0.0.53:5000/local-httpd
+podman push 10.0.0.53:5000/local-httpd
+
+# CHECK
+curl http://10.0.0.53:5000/v2/_catalog
+
+______________________________________________________________
+#### SHOULD NOT REQUIRE ANY POLICY CHANGES BUT IF U NEED :
+## CHECK FOR SELINUX DENIALS
+ausearch -m avc -ts recent | audit2why
+
+## GENERATE POLICY
+ausearch -m avc -ts recent | audit2allow -M local_registry_policy
+
+## ADD POLICY
+semodule -i local_registry_policy.pp
+
+#TRY PUSH again
+podman push 10.0.0.53:5000/local-httpd
+```
+
+To Access this from another system
+* Client
+```
+vi /etc/containers/registries.conf
+[[registry]]
+location = "10.0.0.53:5000"
+insecure = true
+
+#GET tags
+curl http://10.0.0.53:5000/v2/local-httpd/tags/list
+
+podman pull 10.0.0.53:5000/local-httpd:latest
+
+podman run -d --name meweb  10.0.0.53:5000/local-httpd
+podman run -d --name meAlp 10.0.0.53:5000/local-alpine sleep infinity
+```
+
+
+
+
+* While different software, it takes in all the same command structure. Installing container-tools allows you to use docker and podman synonomously
+
+  * <b>podman</b> - managing pods and container images
+  * <h>buildah</b> - building pushing and signing container images
+  * <b>skopeo</b> - for copying inspecting deleteing and signing images
+  * <b>rune</b> - for providing container run and build features to podman and buildah
+  * <b>crun</b> - optional runtime that can be configured and gives flexibility, control and securtity for rootless containers.
+  * <b>pods</b> - group of containers 
 
 ### Install
 ```
@@ -3456,7 +3652,32 @@ chage -E 0 <username>
 ### Grant sudo privileges a new user caladin
 The wheel group is typically used to grant full sudo privileges to users. If you only want the user caladin to have permission to run a single command then you don't need to add them to the wheel group.
 
-`useradd caladin`
+```
+<user> <host(s)> = (<runas_user>) <command>
+```
+
+
+| **Config**                                   | **Effect**                                                                                     |
+|----------------------------------------------|------------------------------------------------------------------------------------------------|
+| `root ALL=(ALL) ALL`                         | `root` can run any command as any user on any host.                                             |
+| `user1 ALL=(root) ALL`                       | `user1` can run any command as `root` on any host.                                              |
+| `user1 ALL=(root) /bin/ls, /usr/bin/apt-get` | `user1` can only run `/bin/ls` and `/usr/bin/apt-get` as `root` on any host.                    |
+| `user1 myhost=(ALL) ALL`                     | `user1` can run any command as any user, but only on the host `myhost`.                         |
+| `user1 ALL=(www-data) ALL`                   | `user1` can run any command as the `www-data` user on any host.                                 |
+| `user1 ALL=(ALL) NOPASSWD: ALL`              | `user1` can run any command as any user without being prompted for a password.                  |
+| `user1 ALL=(ALL) NOPASSWD: /usr/bin/apt-get update` | `user1` can run `/usr/bin/apt-get update` as any user without entering a password.               |
+|###################################|###################################|
+| `Cmnd_Alias NETWORKING = /sbin/ifconfig, /sbin/route` | Creates a command alias `NETWORKING` for the commands `/sbin/ifconfig` and `/sbin/route`.        |
+| `user1 ALL=(root) NETWORKING`                | `user1` can run any command in the `NETWORKING` alias as `root`.                                |
+|###################################|###################################|
+| `Runas_Alias ADMIN = root, sysadmin`         | Creates a `Runas_Alias` `ADMIN` for `root` and `sysadmin`.                                      |
+| `user1 ALL=(ADMIN) ALL`                      | `user1` can run any command as either `root` or `sysadmin` on any host.                         |
+|###################################|###################################|
+| `Defaults:user1 !authenticate`               | `user1` is not required to enter a password when using `sudo`.                                  |
+| `%admin ALL=(ALL) ALL`                       | Any user in the `admin` group can run any command as any user on any host.                      |
+| `%admin ALL=(ALL) ALL, !/bin/rm`             | Any user in the `admin` group can run any command as any user, except `/bin/rm`.                |
+
+
 
 `passwd caladin`
 
@@ -3469,6 +3690,10 @@ The wheel group is typically used to grant full sudo privileges to users. If you
 `chmod 440 /etc/sudoers.d/caladin`
 ___
 ## sticky bits and SETUID and SETGID bits
+*	<b>SetUID (Set User ID)</b>: When applied to an executable, it allows the process to run as the file’s owner (commonly used for root-owned programs), like `passwd`
+*	<b>SetGID (Set Group ID)</b>: When applied to a file, the process runs with the file’s group. When applied to a directory, files created inside inherit the directory’s group.
+*	<b>Sticky bit</b>: When applied to a directory, it ensures that only file owners can delete or rename their own files within a shared directory. like `/var/tmp`
+
 How i make sence of it 
 ||||
 |-|-|-|
@@ -3645,6 +3870,56 @@ ___
 ## Check the change log for a package:
 `rpm -q --changelog gcc`
 ___
+## Create a Repo server on local network
+
+<b>Server</b>
+
+```
+yum install httpd createrepo yum-utils -y
+systemctl enable httpd
+systemctl start httpd
+systemctl status httpd
+
+mkdir -p /var/www/html/rhel/9.4/BASEOS
+mkdir -p /var/www/html/rhel/9.4/AppStream
+
+dnf reposync --repoid=rhel-9-for-aarch64-baseos-rpms --download-metadata --download-path=/var/www/html/rhel/9.4/BASEOS
+dnf reposync --repoid=rhel-9-for-aarch64-appstream-rpms --download-metadata --download-path=/var/www/html/rhel/9.4/AppStream
+
+createrepo /var/www/html/rhel/9.4/BASEOS
+createrepo /var/www/html/rhel/9.4/AppStream
+
+firewall-cmd --permanent --add-service=http
+firewall-cmd --reload
+
+sudo crontab -e
+0 2 * * * /usr/bin/dnf reposync --repoid=rhel-9-for-aarch64-baseos-rpms --download-metadata --download-path=/var/www/html/rhel/9.4/BASEOS
+0 2 * * * /usr/bin/dnf reposync --repoid=rhel-9-for-aarch64-appstream-rpms --download-metadata --download-path=/var/www/html/rhel/9.4/AppStream
+
+
+```
+<b>Client</b>
+```
+make sure you turn off the main redhat.repo (enabled = 0)
+vi /etc/yum.repos.d/local-rhel9.repo
+
+[local-baseos]
+name=Red Hat Enterprise Linux 9.4 BaseOS (aarch64)
+baseurl=http://<your_repo_server>/rhel/9.4/BASEOS
+enabled=1
+gpgcheck=0
+
+[local-appstream]
+name=Red Hat Enterprise Linux 9.4 AppStream (aarch64)
+baseurl=http://<your_repo_server>/rhel/9.4/AppStream
+enabled=1
+gpgcheck=0
+
+yum clean all     # Clean all cached data.
+yum makecache     # Rebuild the repository metadata cache.
+yum repolist      # Verify the enabled repositories.
+
+```
 ___
 ___
 ___
