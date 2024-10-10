@@ -1,21 +1,69 @@
 
 # Notes for learning ansible
+<!-- TOC tocDepth:2..3 chapterDepth:2..6 -->
 
-- [Distribute key to managed hosts ](#distribute-key-to-managed-hosts)
-- [Get the version of Ansilbe](#get-version-of-ansible)
+- [Red Hat Installation](#red-hat-installation)
+- [Distribute Key to managed hosts](#distribute-key-to-managed-hosts)
+- [Get version of ansible](#get-version-of-ansible)
 - [Anisible Config file Priority heirarchy](#anisible-config-file-priority-heirarchy)
 - [Inventories](#inventories)
+  - [Config](#config)
+  - [inventory file](#inventory-file)
+  - [Commands](#commands)
 - [Modules](#modules)
+  - [Setup Module](#setup-module)
+  - [File Module](#file-module)
+  - [Copy Module](#copy-module)
+  - [fetch Module Example](#fetch-module-example)
+  - [Command Module](#command-module)
 - [Ansible Documentation](#ansible-documentation)
 - [YAML](#yaml)
+  - [<u>!- Single quote are litteral quotes, whereas double quotes are interpreted.</u>](#u--single-quote-are-litteral-quotes-whereas-double-quotes-are-interpretedu)
+  - [<u>!- Multilines and single lines:</u>](#u--multilines-and-single-linesu)
+  - [<u>!- Integers are automatically intepreted as INT unless quoted.</u>](#u--integers-are-automatically-intepreted-as-int-unless-quotedu)
+  - [<u>!- Lists `[]` are assigned with `-`</u> an these actually create a python list.](#u--lists-are-assigned-with--u-an-these-actually-create-a-python-list)
+  - [<u>!- Dictionaries `{}` are assigned with  key `:` value  </u> an these actually create a python dictionary.](#u--dictionaries-are-assigned-with-key-value-u-an-these-actually-create-a-python-dictionary)
+  - [<u>!- Indentation </u>](#u--indentation-u)
+  - [Useful Links:](#useful-links)
 - [Playbooks](#playbooks)
+  - [Structure](#structure)
+  - [Some important notes:](#some-important-notes)
 - [Variables](#variables)
-- [Ansible Playbooks, facts](#ansible-playbooks-facts)
-- [Jinja2 Templating](#jinja2-templating)
-- [Playbooks - Advanced](#playbooks---advanced)
+  - [Different way to set and access variables:](#different-way-to-set-and-access-variables)
+  - [Passing in Extravars](#passing-in-extravars)
+  - [Vars as directory/files](#vars-as-directoryfiles)
+- [Ansible Playbooks, Facts](#ansible-playbooks-facts)
+  - [Facts](#facts)
+  - [Custom Facts](#custom-facts)
+  - [Example to propegate facts to a remote system , refresh facts and rerun.](#example-to-propegate-facts-to-a-remote-system-refresh-facts-and-rerun)
+  - [Example to propegate facts to a remote system , refresh facts and rerun. (Using non root custom factsdir)](#example-to-propegate-facts-to-a-remote-system-refresh-facts-and-rerun-using-non-root-custom-factsdir)
+- [Jinja2 templating](#jinja2-templating)
+  - [Example playbook](#example-playbook)
+- [Playbooks - Advanced!](#playbooks---advanced)
+  - [Useful Modules](#useful-modules)
 - [Dynamic Inventories](#dynamic-inventories)
+  - [Example - inventory.py](#example---inventorypy)
 - [Register and When](#register-and-when)
+  - [Register](#register)
+  - [When](#when)
 - [Looping](#looping)
+  - [with_items](#with_items)
+  - [with_fileglob](#with_fileglob)
+  - [with_inventory_hostnames](#with_inventory_hostnames)
+  - [with_dict](#with_dict)
+  - [with_subelements](#with_subelements)
+  - [Using Loops to work with Keys:](#using-loops-to-work-with-keys)
+- [Perfomance](#perfomance)
+  - [](#)
+
+<!-- /TOC -->
+## Red Hat Installation
+```
+enable Ansible RPMS in /etc/yum.repos.d/redhat.repo
+sudo dnf update
+sudo dnf install ansible
+
+```
 
 ## Distribute Key to managed hosts
 ```
@@ -34,6 +82,9 @@ done
 
 ansible -i,ubuntu1,ubuntu2,ubuntu3,centos1,centos2,centos3 all -m ping
 ```
+* Note that the first comma after -i is important to tell Ansible you are providing a list of hosts directly instead of pointing to a file.
+* Even though you listed the hosts manually, you can still use the keyword all to apply the module to all the provided hosts.
+
 ## Get version of ansible
 ```
 $ ansible --version
@@ -677,9 +728,8 @@ ___
 # YAML documents begin with the document separator ---
  
 # The minus in YAML this indicates a list item.  The playbook contains a list
-
 # of plays, with each play being a dictionary
- 
+- 
   # Hosts: where our play will run and options it will run with
   hosts: linux
  
