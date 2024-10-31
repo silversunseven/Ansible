@@ -74,6 +74,9 @@ ssh root@"$CONTROL_HOST_IP" "bash -s" <<EOF
     # Create the inventory file in the ansible user's home on the control host
     echo "[my_vms]" > /home/ansible/inventory.ini
     chown ansible:ansible /home/ansible/inventory.ini
+
+    # Install Ansible
+    sudo yum install ansible-core ansible-collection-redhat-rhel_mgmt -y
 EOF
 
 # Append each VM IP to the inventory file on the control host
