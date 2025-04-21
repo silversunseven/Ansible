@@ -1,0 +1,108 @@
+---
+-
+  hosts: pi
+  become: yes
+
+  tasks:
+  - name: Update apt cache
+    ansible.builtin.apt:
+      update_cache: yes
+
+  # Wireshark
+  - name: Upgrade all packages to the latest version
+    ansible.builtin.apt:
+      upgrade: dist
+
+  - name: Install Wireshark
+    ansible.builtin.apt:
+      name: wireshark
+      state: present
+
+  - name: Ensure group "wireshark" exists with correct gid
+    ansible.builtin.group:
+      name: wireshark
+      state: present
+      gid: 125
+
+  - name: Add user pi to the wireshark group
+    ansible.builtin.user:
+      name: pi
+      uid: 1000
+      groups: wireshark
+      append: yes
+
+
+
+  # UptimeKuma
+  - name: Install Git
+    ansible.builtin.apt:
+      name: git
+      state: present
+
+  - name: Install Build Essentials
+    ansible.builtin.apt:
+      name: build-essential
+      state: present
+
+  - name: Install Node.js
+    ansible.builtin.apt:
+      name: nodejs
+      state: present
+
+  - name: Get Node.js setup script
+    ansible.builtin.shell: curl -fsSL https://deb.nodesource.com/setup_current.x | bash -
+
+  - name: Check if /home/pi/myKuma exists
+    ansible.builtin.stat:
+      path: /home/pi/myKuma
+    register: mykuma_dir
+
+  - name: Remove /home/pi/myKuma if it exists
+    ansible.builtin.file:
+      path: /home/pi/myKuma
+      state: absent
+    when: mykuma_dir.stat.exists
+
+  - name: Clone Uptime Kuma repository
+    ansible.builtin.git:
+      repo: https://github.com/louislam/uptime-kuma.git
+      dest: /home/pi/myKuma
+      clone: yes
+      update: yes
+
+  - name: Use NodeJs to install Uptime Kuma
+    ansible.builtin.shell: npm run setup
+    args:
+      chdir: /home/pi/myKuma
+
+  - name: Install PM2 globally
+    ansible.builtin.npm:
+      name: pm2
+      global: yes
+
+  - name: Install PM2 log rotate module
+    ansible.builtin.shell: pm2 install pm2-logrotate
+    args:
+      chdir: /home/pi/myKuma
+
+  - name: Start Uptime Kuma with PM2
+    ansible.builtin.shell: pm2 start server/server.js --name uptime-kuma
+    args:
+      chdir: /home/pi/myKuma
+
+  - name: Save current PM2 process list
+    ansible.builtin.shell: pm2 save
+    args:
+      chdir: /home/pi/myKuma
+
+  - name: Setup PM2 to start on boot
+    ansible.builtin.shell: pm2 startup
+    register: pm2_startup
+
+  - name: Run PM2 startup command generated in previous task
+    ansible.builtin.shell: "{{ pm2_startup.stdout }}"
+    when: pm2_startup.stdout is defined
+
+
+
+...
